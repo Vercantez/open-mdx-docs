@@ -1,0 +1,47 @@
+---
+title: Search
+description: Cloudflare AI Search in production, a static local index everywhere else.
+---
+
+Press `⌘K` (or `/`) anywhere on the site to search. The `/api/search` endpoint picks a backend automatically:
+
+| Runtime | Backend |
+| --- | --- |
+| Cloudflare Workers | Cloudflare AI Search (semantic, hybrid) |
+| Local dev / Node.js | Static search index built from your pages |
+
+## Cloudflare AI Search
+
+When deployed to Cloudflare, search is powered by [AI Search](https://developers.cloudflare.com/ai-search/) — a managed retrieval service that crawls your deployed docs site and answers natural-language queries.
+
+<Steps>
+  <Step title="Deploy your site">
+    AI Search with a website data source crawls your live domain, so deploy first: `bun run deploy`.
+  </Step>
+  <Step title="Create an instance">
+    In the Cloudflare dashboard go to **AI → AI Search → Create**, choose a **Website** data source, and enter your docs domain. Name the instance `open-mdx-docs` (or set `AI_SEARCH_INSTANCE` in `wrangler.jsonc` to your name).
+  </Step>
+  <Step title="Enable the binding and redeploy">
+    Uncomment `ai_search_namespaces` in `wrangler.jsonc`, then redeploy. Search results show an **AI Search** badge in the palette.
+  </Step>
+</Steps>
+
+```jsonc
+"ai_search_namespaces": [
+  { "binding": "AI_SEARCH", "namespace": "default", "remote": true }
+]
+```
+
+`remote: true` lets `wrangler dev` proxy to your deployed instance. Without the binding, the site uses the local index.
+
+## Local fallback index
+
+At build time the MDX plugin extracts every page's title, description, headings, and plain text into `virtual:mdx-docs/search-index`. The local backend scores documents by weighted term matches (title &gt; headings &gt; body) — no external service required.
+
+<Tip>
+  The fallback keeps search fully functional in air-gapped environments, preview deployments on Node.js, and CI.
+</Tip>
+
+## API
+
+The search palette calls [`GET /api/search?q=...`](/api/search-endpoint), which returns `{ query, source, results }`. The `source` field is `ai-search` or `local`, so clients can tell which backend answered.

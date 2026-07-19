@@ -1,0 +1,68 @@
+---
+title: Tabs and steps
+description: Tabs, Accordion, Steps, and Expandable components for progressive disclosure.
+---
+
+## Tabs
+
+<Tabs>
+  <Tab title="npm">
+    ```bash
+    npm install
+    npm run dev
+    ```
+  </Tab>
+  <Tab title="bun">
+    ```bash
+    bun install
+    bun run dev
+    ```
+  </Tab>
+  <Tab title="pnpm">
+    ```bash
+    pnpm install
+    pnpm dev
+    ```
+  </Tab>
+</Tabs>
+
+```mdx
+<Tabs>
+  <Tab title="npm">npm run dev</Tab>
+  <Tab title="bun">bun run dev</Tab>
+</Tabs>
+```
+
+## Steps
+
+<Steps>
+  <Step title="Install">
+    Run `bun install` in the project root.
+  </Step>
+  <Step title="Develop">
+    Start the server with `bun run dev`.
+  </Step>
+  <Step title="Ship">
+    Deploy with `bun run deploy` or `bun start`.
+  </Step>
+</Steps>
+
+## Accordion
+
+<AccordionGroup>
+  <Accordion title="What is content negotiation?">
+    The same URL returns HTML to browsers and Markdown to agents that prefer `text/markdown`.
+  </Accordion>
+  <Accordion title="Does search work offline?">
+    Yes. Without a Cloudflare AI Search binding, the site falls back to a static local index.
+  </Accordion>
+  <Accordion title="Can I use mint.json?">
+    Yes. The build plugin accepts either `docs.json` or `mint.json` in the content directory.
+  </Accordion>
+</AccordionGroup>
+
+## Expandable
+
+<Expandable title="Show advanced details">
+  Expandable is a thin wrapper around Accordion for single collapsible sections.
+</Expandable>

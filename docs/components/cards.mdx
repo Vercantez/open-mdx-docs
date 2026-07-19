@@ -1,0 +1,38 @@
+---
+title: Cards
+description: Card and CardGroup for linking related pages and highlighting features.
+---
+
+Cards are the primary way to present a grid of related destinations.
+
+## Example
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" href="/quickstart">
+    Install, run the dev server, and add your first page.
+  </Card>
+  <Card title="Theming" href="/guides/theming">
+    Brand colors, dark mode, and shadcn design tokens.
+  </Card>
+  <Card title="Search" href="/guides/search">
+    Cloudflare AI Search and the local fallback index.
+  </Card>
+  <Card title="Deployment" href="/guides/deployment">
+    Ship to Cloudflare Workers or Node.js.
+  </Card>
+</CardGroup>
+
+## Usage
+
+```mdx
+<CardGroup cols={2}>
+  <Card title="Quickstart" href="/quickstart">
+    Get running in two minutes.
+  </Card>
+  <Card title="External" href="https://ui.shadcn.com">
+    Cards also open external links in a new tab.
+  </Card>
+</CardGroup>
+```
+
+`cols` controls the preferred column count. On narrow screens the grid collapses automatically.

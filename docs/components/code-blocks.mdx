@@ -1,0 +1,37 @@
+---
+title: Code blocks
+description: Syntax-highlighted code with dual light/dark themes and a copy button.
+---
+
+Code blocks are highlighted at build time with [Shiki](https://shiki.style). Both light and dark themes are embedded as CSS variables, so switching themes needs no JavaScript.
+
+## Languages
+
+```ts
+import { createRequestHandler } from 'react-router';
+
+export default {
+  async fetch(request, env, ctx) {
+    return handleRequest(request, { cloudflare: { env, ctx } });
+  },
+};
+```
+
+```bash
+curl -H "Accept: text/markdown" https://docs.example.com/quickstart
+```
+
+```json
+{
+  "name": "Open MDX Docs",
+  "colors": { "primary": "#0d9373" }
+}
+```
+
+## Code groups
+
+Group related snippets with `CodeGroup`. Children are fenced code blocks; the first word of each fence language line is used as the tab title.
+
+## Inline code
+
+Use backticks for short identifiers like `AI_SEARCH` or `docs.json`.

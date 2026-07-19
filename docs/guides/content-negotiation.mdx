@@ -1,0 +1,55 @@
+---
+title: Content negotiation
+description: The same URL serves HTML to browsers and Markdown to agents, based on the Accept header.
+---
+
+AI agents and LLM tools increasingly fetch documentation directly. Open MDX Docs always performs content negotiation: a request that prefers `text/markdown` or `text/plain` over `text/html` receives the raw Markdown source of the page instead of the rendered site.
+
+## Try it
+
+```bash
+# HTML (default)
+curl https://docs.example.com/quickstart
+
+# Markdown
+curl -H "Accept: text/markdown" https://docs.example.com/quickstart
+
+# Explicit .md URL (no Accept header required)
+curl https://docs.example.com/quickstart.md
+```
+
+Responses carry `Content-Type: text/markdown; charset=utf-8` and `Vary: Accept`.
+
+## How negotiation decides
+
+<Steps>
+  <Step title="Explicit .md or .mdx suffix">
+    `/quickstart.md` always returns Markdown, regardless of headers.
+  </Step>
+  <Step title="Accept header preference">
+    The quality values (`q=`) of `text/markdown`, `text/x-markdown`, and `text/plain` are compared against `text/html` and wildcards. Markdown wins only when strictly preferred.
+  </Step>
+  <Step title="Everything else gets HTML">
+    Browsers, and agents that send `Accept: */*`, receive the normal rendered page.
+  </Step>
+</Steps>
+
+<Note>
+  The root URL `/` negotiates too: a Markdown-preferred request to `/` returns the first navigation page as Markdown.
+</Note>
+
+## llms.txt
+
+Two machine-readable entry points are generated at build time:
+
+- [`/llms.txt`](/llms.txt) — a curated index of every page with links to its `.md` URL.
+- [`/llms-full.txt`](/llms-full.txt) — the full Markdown source of every page concatenated into one document.
+
+## Where it runs
+
+Content negotiation happens before React rendering, in the server entry of each runtime:
+
+- **Cloudflare** — `workers/app.ts` checks the request before invoking React Router, using the Markdown sources bundled at build time.
+- **Node.js** — `server/node-server.mjs` performs the identical check, reading Markdown from the content directory on disk.
+
+Both share the same negotiation rules, so behavior is identical across runtimes.

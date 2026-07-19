@@ -1,0 +1,23 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "open-mdx-docs",
+	"main": "workers/app.ts",
+	"compatibility_date": "2026-07-01",
+	"compatibility_flags": ["nodejs_compat"],
+	"assets": {
+		"binding": "ASSETS",
+		"directory": "build/client"
+	},
+	"observability": {
+		"enabled": true
+	},
+	"vars": {
+		// Name of the AI Search instance that powers /api/search on Cloudflare.
+		// Create it after first deploy (website data source → your docs domain).
+		"AI_SEARCH_INSTANCE": "open-mdx-docs"
+	}
+	// Enable after creating an AI Search instance:
+	// "ai_search_namespaces": [
+	//   { "binding": "AI_SEARCH", "namespace": "default", "remote": true }
+	// ]
+}

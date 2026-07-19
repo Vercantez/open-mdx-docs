@@ -1,0 +1,53 @@
+---
+title: Theming
+description: shadcn/ui design tokens, dark mode, and Mintlify color configuration.
+---
+
+The site is themed with [shadcn/ui](https://ui.shadcn.com) design tokens on Tailwind CSS v4. Every color flows through CSS variables, so you can retheme the whole site without touching component code.
+
+## Brand color
+
+Set `colors` in `docs.json` — the same shape Mintlify uses:
+
+```json
+{
+  "colors": {
+    "primary": "#0d9373",
+    "light": "#07c983",
+    "dark": "#0d9373"
+  }
+}
+```
+
+- `primary` is used for light mode accents (links, active nav, callouts).
+- `light` overrides the accent in dark mode; falls back to `primary`.
+- These values are injected as `--docs-primary` CSS variables at runtime.
+
+## Dark mode
+
+Dark mode is class-based and driven by `next-themes`. The toggle in the navbar switches between light, dark, and system.
+
+Control behavior with `appearance` in `docs.json`:
+
+```json
+{
+  "appearance": { "default": "dark", "strict": true }
+}
+```
+
+- `default`: `light`, `dark`, or `system` (default).
+- `strict`: when `true`, the theme toggle is hidden and visitors always get the default theme.
+
+## shadcn tokens
+
+All shadcn/ui tokens (`--background`, `--foreground`, `--card`, `--border`, `--primary`, ...) live in `app/app.css` under `:root` and `.dark`. Change them there, or add components with the shadcn CLI:
+
+```bash
+bunx shadcn@latest add tooltip
+```
+
+The included `components.json` is preconfigured with the `~` alias and the `app/app.css` stylesheet.
+
+## Code blocks
+
+Syntax highlighting uses [Shiki](https://shiki.style) at build time with dual `github-light-default` / `github-dark-default` themes — zero JavaScript ships to the client for highlighting.

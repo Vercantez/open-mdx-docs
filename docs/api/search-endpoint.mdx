@@ -1,0 +1,58 @@
+---
+title: Search API
+description: Query documentation with GET /api/search.
+---
+
+## Endpoint
+
+```
+GET /api/search?q={query}&limit={limit}
+```
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `q` | string | — | Search query. Required. |
+| `limit` | number | `10` | Max results (capped at 25). |
+
+## Response
+
+```json
+{
+  "query": "content negotiation",
+  "source": "ai-search",
+  "results": [
+    {
+      "slug": "guides/content-negotiation",
+      "title": "Content negotiation",
+      "description": "The same URL serves HTML to browsers and Markdown to agents.",
+      "excerpt": "AI agents and LLM tools increasingly fetch documentation...",
+      "score": 0.91
+    }
+  ]
+}
+```
+
+| Field | Description |
+| --- | --- |
+| `source` | `ai-search` when Cloudflare AI Search answered, otherwise `local`. |
+| `results[].slug` | Path of the matching page (without leading slash). |
+| `results[].score` | Relevance score. Higher is better. |
+
+## Parameters
+
+<ParamField query="q" type="string" required>
+  Natural-language or keyword query.
+</ParamField>
+
+<ParamField query="limit" type="number" default="10">
+  Maximum number of results to return (1–25).
+</ParamField>
+
+## Backend selection
+
+1. If `env.AI_SEARCH` is bound, call AI Search with query rewriting enabled.
+2. On failure or when the binding is absent, fall back to the local static index.
+
+```bash
+curl "https://docs.example.com/api/search?q=deploy+cloudflare"
+```

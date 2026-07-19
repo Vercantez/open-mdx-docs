@@ -1,0 +1,67 @@
+{
+	"$schema": "https://mintlify.com/docs.json",
+	"name": "Open MDX Docs",
+	"description": "A Mintlify-style documentation site you own. Deploy to Cloudflare or Node.js.",
+	"favicon": "/favicon.svg",
+	"colors": {
+		"primary": "#0d9373",
+		"light": "#07c983",
+		"dark": "#0d9373"
+	},
+	"appearance": {
+		"default": "system"
+	},
+	"navigation": {
+		"tabs": [
+			{
+				"tab": "Guides",
+				"groups": [
+					{
+						"group": "Get started",
+						"pages": ["index", "quickstart"]
+					},
+					{
+						"group": "Going further",
+						"pages": [
+							"guides/theming",
+							"guides/content-negotiation",
+							"guides/search",
+							"guides/deployment"
+						]
+					}
+				]
+			},
+			{
+				"tab": "Components",
+				"groups": [
+					{
+						"group": "Building blocks",
+						"pages": [
+							"components/callouts",
+							"components/cards",
+							"components/tabs-and-steps",
+							"components/code-blocks"
+						]
+					}
+				]
+			},
+			{
+				"tab": "API",
+				"groups": [
+					{
+						"group": "Reference",
+						"pages": ["api/search-endpoint"]
+					}
+				]
+			}
+		]
+	},
+	"navbar": {
+		"links": [{ "label": "GitHub", "href": "https://github.com/anomalyco/opencode" }]
+	},
+	"footer": {
+		"socials": {
+			"GitHub": "https://github.com/anomalyco/opencode"
+		}
+	}
+}

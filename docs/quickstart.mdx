@@ -1,0 +1,56 @@
+---
+title: Quickstart
+description: Install dependencies, start the dev server, and add your own content.
+---
+
+## Prerequisites
+
+- [Bun](https://bun.sh) 1.1+ or Node.js 20+
+- A Cloudflare account (only when deploying to Cloudflare)
+
+## Start the dev server
+
+```bash
+bun install
+bun run dev
+```
+
+The dev server runs on `http://localhost:3000` with hot reload. Editing any file in `docs/` reloads the site.
+
+## Add your content
+
+<Steps>
+  <Step title="Replace the docs directory">
+    Point the site at your own content with the `DOCS_DIR` environment variable, or replace the contents of `docs/`.
+  </Step>
+  <Step title="Describe your navigation">
+    Edit `docs/docs.json`. Pages are referenced by path without extension, so `docs/guides/setup.mdx` is `"guides/setup"`.
+  </Step>
+  <Step title="Write pages">
+    Every `.mdx` file supports frontmatter plus the built-in [components](/components/callouts).
+  </Step>
+</Steps>
+
+```mdx
+---
+title: My page
+description: What this page covers
+---
+
+Content goes here. Use Note, Card, and other components.
+```
+
+<Warning>
+  Navigation entries that point at missing pages are skipped silently. Check the dev server output if a page does not appear in the sidebar.
+</Warning>
+
+## Project layout
+
+```
+├── docs/               # Your content (docs.json + .mdx files)
+├── app/                # The site application (React Router + shadcn/ui)
+├── vite/               # The MDX build plugin
+├── workers/            # Cloudflare Workers entry
+├── server/             # Node.js server
+└── wrangler.jsonc      # Cloudflare configuration
+```

@@ -1,0 +1,68 @@
+---
+title: Deployment
+description: Deploy the same build to Cloudflare Workers or any Node.js host.
+---
+
+## Cloudflare Workers
+
+The preferred target. Static assets are served from Cloudflare's edge, pages render in a Worker, and search uses Cloudflare AI Search.
+
+```bash
+bunx wrangler login   # once
+bun run deploy        # react-router build && wrangler deploy
+```
+
+`wrangler.jsonc` declares the Worker entry and static assets. Uncomment `ai_search_namespaces` after creating an AI Search instance (see [Search](/guides/search)).
+
+To preview the production build locally:
+
+```bash
+bun run build
+bun run preview
+```
+
+<Note>
+  Create your AI Search instance after the first deploy — the website crawler needs a live URL. See [Search](/guides/search).
+</Note>
+
+## Node.js
+
+The Node.js server serves static assets, performs content negotiation from the on-disk content directory, and renders pages with React Router.
+
+```bash
+bun run build
+bun start                 # http://localhost:3000
+# or: PORT=8080 node server/node-server.mjs
+```
+
+Useful environment variables:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `PORT` | `3000` | Listen port |
+| `DOCS_DIR` | `./docs` | Content directory (also honored at build time) |
+| `NODE_ENV` | `production` | React Router mode |
+
+The Node server has no native dependencies, so it runs in any container:
+
+```dockerfile
+FROM oven/bun:1
+WORKDIR /app
+COPY . .
+RUN bun install && bun run build
+EXPOSE 3000
+CMD ["bun", "server/node-server.mjs"]
+```
+
+<Warning>
+  On Node.js, search uses the local static index — AI Search is a Cloudflare-only feature. Everything else (rendering, theming, content negotiation) behaves identically.
+</Warning>
+
+## Custom content directory
+
+Both the build and the Node server honor `DOCS_DIR`, so you can keep this project as a dependency of a separate content repo:
+
+```bash
+DOCS_DIR=/path/to/your/docs bun run build
+DOCS_DIR=/path/to/your/docs bun start
+```

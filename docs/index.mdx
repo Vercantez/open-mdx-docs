@@ -1,0 +1,52 @@
+---
+title: Introduction
+description: A Mintlify-style documentation site built on MDX, React Router, and shadcn/ui. Deploy to Cloudflare or Node.js.
+---
+
+Open MDX Docs turns a folder of MDX files into a fast, themeable documentation site. It speaks the Mintlify configuration format, so if you already have a `docs.json` and a pile of `.mdx` files, you can drop them in and ship.
+
+## Why
+
+<CardGroup cols={2}>
+  <Card title="Own your docs" icon="📦">
+    No hosted lock-in. Your content, your domain, your infrastructure.
+  </Card>
+  <Card title="Deploy anywhere" icon="🚀">
+    One codebase deploys to Cloudflare Workers or any Node.js host.
+  </Card>
+  <Card title="Agent-friendly" icon="🤖">
+    Content negotiation serves Markdown to agents and HTML to humans.
+  </Card>
+  <Card title="AI Search" icon="✨">
+    Cloudflare AI Search powers semantic search when you deploy to Cloudflare.
+  </Card>
+</CardGroup>
+
+## How it works
+
+<Steps>
+  <Step title="Write MDX">
+    Put `.mdx` files in the `docs/` directory and describe your navigation in `docs.json`.
+  </Step>
+  <Step title="Build">
+    A Vite plugin compiles every page at build time, extracts frontmatter and a table of contents, and builds a static search index.
+  </Step>
+  <Step title="Deploy">
+    Run `bun run deploy` for Cloudflare Workers or `bun run build && bun start` for Node.js.
+  </Step>
+</Steps>
+
+<Tip>
+  Every page is available as Markdown. Append `.md` to any page URL or send `Accept: text/markdown` — see [content negotiation](/guides/content-negotiation).
+</Tip>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" href="/quickstart">
+    Get a local dev server running in two minutes.
+  </Card>
+  <Card title="Deployment" href="/guides/deployment">
+    Ship to Cloudflare Workers or Node.js.
+  </Card>
+</CardGroup>
