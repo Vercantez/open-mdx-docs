@@ -1,90 +1,119 @@
-# Open MDX Docs
+# open-mdx-docs
 
-A Mintlify-style documentation site you own. Drop in MDX content, theme with shadcn/ui, deploy to **Cloudflare Workers** or **Node.js**. Agents that prefer Markdown get Markdown.
+Mintlify-style MDX documentation you own. **Add it to any docs content repo**, then:
 
-## Features
+```bash
+bunx open-mdx-docs dev
+bunx open-mdx-docs deploy
+```
 
-- Mintlify-compatible `docs.json` / `mint.json` navigation
-- MDX pages with callouts, cards, tabs, steps, accordions, code groups
-- shadcn/ui + Tailwind v4 theming (brand color from `docs.json`)
-- Content negotiation: `Accept: text/markdown` or `.md` URLs return source
-- `/llms.txt` and `/llms-full.txt` for agents
-- Cloudflare AI Search for production search; static local index everywhere else
-- One codebase → Cloudflare Workers or Node.js
+- Mintlify-compatible `docs.json` / `mint.json` + MDX
+- shadcn/ui + Tailwind v4 theming
+- Content negotiation (`Accept: text/markdown` / `.md` URLs)
+- Cloudflare AI Search in production, local search everywhere else
+- Deploy to **Cloudflare Workers** or run on **Node**
 
-## Quick start
+## Add to your MDX docs repo
+
+```bash
+cd your-docs-repo
+bun add -d open-mdx-docs
+# or until published to npm:
+# bun add -d github:Vercantez/open-mdx-docs
+
+bunx open-mdx-docs init
+bun install
+bunx open-mdx-docs doctor
+bunx open-mdx-docs dev
+```
+
+Your content stays Mintlify-shaped:
+
+```
+your-docs-repo/
+  docs.json          # or mint.json
+  getting-started/
+  guides/
+  open-mdx-docs.config.json
+  package.json
+```
+
+### Config (`open-mdx-docs.config.json`)
+
+```json
+{
+  "basePath": "/docs",
+  "docsDir": ".",
+  "name": "my-docs",
+  "aiSearchInstance": "my-docs",
+  "routes": [
+    { "pattern": "example.com/docs*", "zone_name": "example.com" }
+  ]
+}
+```
+
+| Field | Meaning |
+| --- | --- |
+| `docsDir` | Folder with `docs.json` (default: auto-detect `.` or `docs/`) |
+| `basePath` | URL prefix, e.g. `/docs` for `example.com/docs` |
+| `name` | Cloudflare Worker name |
+| `routes` | Wrangler routes for production |
+| `aiSearchInstance` | Cloudflare AI Search instance name |
+
+### Commands
+
+| Command | Description |
+| --- | --- |
+| `open-mdx-docs dev` | Dev server with HMR |
+| `open-mdx-docs build` | Build into `.open-mdx-docs/` |
+| `open-mdx-docs start` | Node server for the production build |
+| `open-mdx-docs deploy` | Build + `wrangler deploy` |
+| `open-mdx-docs doctor` | Sanity-check content + toolchain |
+| `open-mdx-docs init` | Scaffold scripts + config |
+
+Flags: `--docs <dir>`, `--base-path <path>`, `--port <n>`, `--name <worker>`.
+
+### Deploy (Cloudflare)
+
+```bash
+# real Node on PATH (not a bun→node shim)
+bunx open-mdx-docs deploy
+```
+
+Uses routes from config. Build artifacts land in `.open-mdx-docs/` (gitignored).
+
+### Content negotiation
+
+```bash
+curl -H "Accept: text/markdown" https://example.com/docs/quickstart
+curl https://example.com/docs/quickstart.md
+curl https://example.com/docs/llms.txt
+```
+
+## Developing this package
 
 ```bash
 bun install
-bun run dev
-```
-
-Open `http://localhost:3000`. Content lives in `docs/`.
-
-## Add to your MDX docs project
-
-Point the build and server at your content directory:
-
-```bash
-DOCS_DIR=/path/to/your/docs bun run dev
-DOCS_DIR=/path/to/your/docs bun run build
-DOCS_DIR=/path/to/your/docs bun start
-```
-
-Your content directory needs:
-
-```
-docs/
-  docs.json          # or mint.json
-  index.mdx
-  guides/...
-```
-
-## Deploy
-
-### Cloudflare Workers
-
-```bash
-bunx wrangler login
-bun run deploy
-```
-
-Then create an [AI Search](https://developers.cloudflare.com/ai-search/) instance with a **website** data source pointing at your deployed domain, name it `open-mdx-docs`, uncomment `ai_search_namespaces` in `wrangler.jsonc`, and redeploy.
-
-### Node.js
-
-```bash
+bun run dev          # uses ./docs example content
+bun run typecheck
 bun run build
-bun start
-# PORT=8080 node server/node-server.mjs
 ```
 
-## Content negotiation
+## Publish to npm
 
 ```bash
-curl -H "Accept: text/markdown" http://localhost:3000/quickstart
-curl http://localhost:3000/quickstart.md
-curl http://localhost:3000/llms.txt
+npm login
+npm publish --access public
 ```
 
-## Scripts
+Until then, consumers can depend on:
 
-| Script | Purpose |
-| --- | --- |
-| `bun run dev` | Dev server (Cloudflare Vite plugin) |
-| `bun run build` | Production build |
-| `bun run deploy` | Build + `wrangler deploy` |
-| `bun run preview` | Preview production build with Wrangler |
-| `bun start` | Node.js server |
-| `bun run typecheck` | Typecheck |
-
-## Project layout
-
+```json
+"devDependencies": {
+  "open-mdx-docs": "github:Vercantez/open-mdx-docs"
+}
 ```
-app/           React Router app + shadcn components
-docs/          Example MDX content + docs.json
-vite/          MDX docs Vite plugin
-workers/       Cloudflare Workers entry (content negotiation)
-server/        Node.js server (content negotiation)
-wrangler.jsonc Cloudflare config + AI Search binding
-```
+
+## License
+
+MIT

@@ -1,7 +1,9 @@
 node_modules
 build
+.open-mdx-docs
 .react-router
 .dev.vars
 .wrangler
 worker-configuration.d.ts
 *.tsbuildinfo
+*.tgz

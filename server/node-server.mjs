@@ -6,8 +6,13 @@ import { fileURLToPath } from 'node:url';
 import { Readable } from 'node:stream';
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const clientDir = path.join(rootDir, 'build', 'client');
-const docsDir = process.env.DOCS_DIR ? path.resolve(process.env.DOCS_DIR) : path.join(rootDir, 'docs');
+const outDir = process.env.OPEN_MDX_DOCS_OUT
+	? path.resolve(process.env.OPEN_MDX_DOCS_OUT)
+	: path.join(rootDir, 'build');
+const clientDir = path.join(outDir, 'client');
+const docsDir = process.env.DOCS_DIR
+	? path.resolve(process.env.DOCS_DIR)
+	: path.join(rootDir, 'docs');
 const port = Number(process.env.PORT ?? 3000);
 
 const MIME_TYPES = {
@@ -195,7 +200,7 @@ async function writeFetchResponse(webResponse, res) {
 	nodeStream.pipe(res);
 }
 
-const workerModule = await import(path.join(rootDir, 'build', 'server', 'index.js'));
+const workerModule = await import(path.join(outDir, 'server', 'index.js'));
 const worker = workerModule.default ?? workerModule;
 
 const emptyEnv = {
