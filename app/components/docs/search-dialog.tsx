@@ -1,6 +1,7 @@
 import { FileText, Sparkles } from 'lucide-react';
 import * as React from 'react';
 import { useNavigate } from 'react-router';
+import { ClientOnly } from '~/components/client-only';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import {
@@ -20,7 +21,7 @@ interface SearchResponse {
 	results: SearchResult[];
 }
 
-export function SearchDialog() {
+function SearchDialogInner() {
 	const [open, setOpen] = React.useState(false);
 	const [query, setQuery] = React.useState('');
 	const [response, setResponse] = React.useState<SearchResponse | null>(null);
@@ -32,7 +33,11 @@ export function SearchDialog() {
 				event.preventDefault();
 				setOpen((value) => !value);
 			}
-			if (event.key === '/' && !(event.target instanceof HTMLInputElement) && !(event.target instanceof HTMLTextAreaElement)) {
+			if (
+				event.key === '/' &&
+				!(event.target instanceof HTMLInputElement) &&
+				!(event.target instanceof HTMLTextAreaElement)
+			) {
 				event.preventDefault();
 				setOpen(true);
 			}
@@ -54,7 +59,7 @@ export function SearchDialog() {
 				});
 				if (res.ok) setResponse((await res.json()) as SearchResponse);
 			} catch {
-				// aborted or network error; ignore
+				// aborted or network error
 			}
 		}, 150);
 		return () => {
@@ -128,5 +133,26 @@ export function SearchDialog() {
 				</CommandList>
 			</CommandDialog>
 		</>
+	);
+}
+
+function SearchFallback() {
+	return (
+		<Button
+			variant="outline"
+			className="h-8 w-40 justify-start gap-2 text-muted-foreground lg:w-56"
+			disabled
+		>
+			<FileText className="size-3.5" />
+			<span className="hidden lg:inline">Search docs...</span>
+		</Button>
+	);
+}
+
+export function SearchDialog() {
+	return (
+		<ClientOnly fallback={<SearchFallback />}>
+			<SearchDialogInner />
+		</ClientOnly>
 	);
 }

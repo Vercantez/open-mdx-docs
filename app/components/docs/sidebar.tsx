@@ -1,7 +1,5 @@
 import { ChevronRight } from 'lucide-react';
-import * as React from 'react';
 import { NavLink } from 'react-router';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
 import type { NavNode } from '~/lib/docs-types';
 import { cn } from '~/lib/utils';
 
@@ -11,7 +9,15 @@ function slugInTree(nodes: NavNode[], slug: string): boolean {
 	);
 }
 
-function SidebarNodes({ nodes, activeSlug, depth = 0 }: { nodes: NavNode[]; activeSlug: string; depth?: number }) {
+function SidebarNodes({
+	nodes,
+	activeSlug,
+	depth = 0,
+}: {
+	nodes: NavNode[];
+	activeSlug: string;
+	depth?: number;
+}) {
 	return (
 		<ul className={cn('flex flex-col gap-0.5', depth > 0 && 'ml-3 border-l pl-3')}>
 			{nodes.map((node) =>
@@ -30,39 +36,20 @@ function SidebarNodes({ nodes, activeSlug, depth = 0 }: { nodes: NavNode[]; acti
 						</NavLink>
 					</li>
 				) : (
-					<SidebarGroup key={node.group} node={node} activeSlug={activeSlug} depth={depth} />
+					<li key={node.group}>
+						<details className="group" open={slugInTree(node.pages, activeSlug) || depth === 0}>
+							<summary className="flex cursor-pointer list-none items-center justify-between rounded-md px-2 py-1.5 text-sm font-medium hover:bg-accent [&::-webkit-details-marker]:hidden">
+								{node.group}
+								<ChevronRight className="size-3.5 text-muted-foreground transition-transform group-open:rotate-90" />
+							</summary>
+							<div className="pt-0.5">
+								<SidebarNodes nodes={node.pages} activeSlug={activeSlug} depth={depth + 1} />
+							</div>
+						</details>
+					</li>
 				),
 			)}
 		</ul>
-	);
-}
-
-function SidebarGroup({ node, activeSlug, depth }: { node: Extract<NavNode, { type: 'group' }>; activeSlug: string; depth: number }) {
-	const containsActive = slugInTree(node.pages, activeSlug);
-	const [open, setOpen] = React.useState(true);
-	React.useEffect(() => {
-		if (containsActive) setOpen(true);
-	}, [containsActive]);
-
-	return (
-		<li>
-			<Collapsible open={open} onOpenChange={setOpen}>
-				<CollapsibleTrigger
-					className={cn(
-						'flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm font-medium hover:bg-accent',
-						containsActive ? 'text-foreground' : 'text-foreground/80',
-					)}
-				>
-					{node.group}
-					<ChevronRight
-						className={cn('size-3.5 text-muted-foreground transition-transform', open && 'rotate-90')}
-					/>
-				</CollapsibleTrigger>
-				<CollapsibleContent className="pt-0.5">
-					<SidebarNodes nodes={node.pages} activeSlug={activeSlug} depth={depth + 1} />
-				</CollapsibleContent>
-			</Collapsible>
-		</li>
 	);
 }
 

@@ -9,6 +9,7 @@ import {
 } from 'react-router';
 import { ThemeProvider } from 'next-themes';
 import type { Route } from './+types/root';
+import { ClientOnly } from '~/components/client-only';
 import { withBase } from '~/lib/base';
 import { docsConfig, primaryColors } from '~/lib/docs';
 import './app.css';
@@ -53,21 +54,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
 				<Meta />
 				<Links />
 			</head>
-			<body>
-				<ThemeProvider
-					attribute="class"
-					defaultTheme={data?.appearance.default ?? 'system'}
-					enableSystem={!data?.appearance.strict || data?.appearance.default === 'system'}
-					forcedTheme={
-						data?.appearance.strict && data.appearance.default !== 'system'
-							? data.appearance.default
-							: undefined
-					}
-					storageKey="theme"
-					disableTransitionOnChange
-				>
-					{children}
-				</ThemeProvider>
+			<body suppressHydrationWarning>
+				{children}
 				<ScrollRestoration />
 				<Scripts />
 			</body>
@@ -75,8 +63,37 @@ export function Layout({ children }: { children: React.ReactNode }) {
 	);
 }
 
+function ThemedApp({
+	defaultTheme,
+	strict,
+}: {
+	defaultTheme: 'light' | 'dark' | 'system';
+	strict: boolean;
+}) {
+	return (
+		<ThemeProvider
+			attribute="class"
+			defaultTheme={defaultTheme}
+			enableSystem={!strict || defaultTheme === 'system'}
+			forcedTheme={strict && defaultTheme !== 'system' ? defaultTheme : undefined}
+			storageKey="theme"
+			disableTransitionOnChange
+			enableColorScheme={false}
+		>
+			<Outlet />
+		</ThemeProvider>
+	);
+}
+
 export default function App() {
-	return <Outlet />;
+	const data = useLoaderData<typeof loader>();
+	const defaultTheme = data?.appearance.default ?? 'system';
+	const strict = data?.appearance.strict ?? false;
+	return (
+		<ClientOnly fallback={<Outlet />}>
+			<ThemedApp defaultTheme={defaultTheme} strict={strict} />
+		</ClientOnly>
+	);
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
@@ -94,7 +111,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 			<p className="text-sm font-medium text-primary">Error</p>
 			<h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
 			<p className="text-muted-foreground">{detail}</p>
-			<a href="/" className="text-sm font-medium text-primary hover:underline">
+			<a href={withBase('/')} className="text-sm font-medium text-primary hover:underline">
 				Back to docs
 			</a>
 		</main>

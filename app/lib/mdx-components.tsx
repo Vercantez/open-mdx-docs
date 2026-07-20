@@ -50,13 +50,35 @@ const Warning = (props: { title?: string; children?: React.ReactNode }) => <Call
 const Info = (props: { title?: string; children?: React.ReactNode }) => <Callout kind="Info" {...props} />;
 const Check = (props: { title?: string; children?: React.ReactNode }) => <Callout kind="Check" {...props} />;
 
+function hexToRgba(color: string, alpha: number): string | undefined {
+	const raw = color.trim();
+	const short = /^#([0-9a-f]{3})$/i.exec(raw);
+	const long = /^#([0-9a-f]{6})$/i.exec(raw);
+	let hex = '';
+	if (short) {
+		hex = short[1]
+			.split('')
+			.map((c) => c + c)
+			.join('');
+	} else if (long) {
+		hex = long[1];
+	} else {
+		return undefined;
+	}
+	const r = Number.parseInt(hex.slice(0, 2), 16);
+	const g = Number.parseInt(hex.slice(2, 4), 16);
+	const b = Number.parseInt(hex.slice(4, 6), 16);
+	return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 function renderIcon(icon?: React.ReactNode | string, color?: string) {
 	if (!icon) return null;
 	if (typeof icon === 'string') {
+		const bg = color ? hexToRgba(color, 0.13) : undefined;
 		return (
 			<span
 				className="inline-flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary"
-				style={color ? { backgroundColor: `${color}22`, color } : undefined}
+				style={color ? { backgroundColor: bg, color } : undefined}
 			>
 				<MintlifyIcon icon={icon} className="size-4" color={color} />
 			</span>
@@ -293,25 +315,31 @@ const ResponseField = ParamField;
 function PreWithCopy({ children, ...props }: React.ComponentProps<'pre'>) {
 	const ref = React.useRef<HTMLPreElement>(null);
 	const [copied, setCopied] = React.useState(false);
+	const [canCopy, setCanCopy] = React.useState(false);
+	React.useEffect(() => {
+		setCanCopy(true);
+	}, []);
 	return (
 		<div className="group relative">
 			<pre ref={ref} {...props}>
 				{children}
 			</pre>
-			<button
-				type="button"
-				aria-label="Copy code"
-				onClick={() => {
-					const text = ref.current?.innerText ?? '';
-					void navigator.clipboard?.writeText(text).then(() => {
-						setCopied(true);
-						setTimeout(() => setCopied(false), 1500);
-					});
-				}}
-				className="absolute top-2 right-2 rounded-md border bg-background/80 p-1.5 text-muted-foreground opacity-0 backdrop-blur transition-opacity group-hover:opacity-100 hover:text-foreground"
-			>
-				{copied ? <CheckIcon className="size-3.5" /> : <Copy className="size-3.5" />}
-			</button>
+			{canCopy ? (
+				<button
+					type="button"
+					aria-label="Copy code"
+					onClick={() => {
+						const text = ref.current?.innerText ?? '';
+						void navigator.clipboard?.writeText(text).then(() => {
+							setCopied(true);
+							setTimeout(() => setCopied(false), 1500);
+						});
+					}}
+					className="absolute top-2 right-2 rounded-md border bg-background/80 p-1.5 text-muted-foreground opacity-0 backdrop-blur transition-opacity group-hover:opacity-100 hover:text-foreground"
+				>
+					{copied ? <CheckIcon className="size-3.5" /> : <Copy className="size-3.5" />}
+				</button>
+			) : null}
 		</div>
 	);
 }
