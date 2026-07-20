@@ -3,7 +3,7 @@ title: Content negotiation
 description: The same URL serves HTML to browsers and Markdown to agents, based on the Accept header.
 ---
 
-AI agents and LLM tools increasingly fetch documentation directly. Open MDX Docs always performs content negotiation: a request that prefers `text/markdown` or `text/plain` over `text/html` receives the raw Markdown source of the page instead of the rendered site.
+AI agents and LLM tools increasingly fetch documentation directly. Open MDX Docs always performs content negotiation: a request that prefers `text/markdown` or `text/plain` over `text/html` receives a plain-Markdown version of the page instead of the rendered site. Mintlify-style MDX layout components are converted to headings and prose, and links to known docs pages include the configured base path.
 
 ## Try it
 
@@ -18,7 +18,11 @@ curl -H "Accept: text/markdown" https://docs.example.com/quickstart
 curl https://docs.example.com/quickstart.md
 ```
 
-Responses carry `Content-Type: text/markdown; charset=utf-8` and `Vary: Accept`.
+Both representations carry `Vary: Accept`. Markdown responses use `Content-Type: text/markdown; charset=utf-8`.
+
+## Caching
+
+Workers Cache is enabled by default. HTML and Markdown are cached independently for five minutes and served stale for up to one minute while Cloudflare refreshes them. Each Worker deployment has its own cache namespace by default, so a deploy immediately stops serving the previous build without a manual purge.
 
 ## How negotiation decides
 
@@ -49,7 +53,7 @@ Two machine-readable entry points are generated at build time:
 
 Content negotiation happens before React rendering, in the server entry of each runtime:
 
-- **Cloudflare** — `workers/app.ts` checks the request before invoking React Router, using the Markdown sources bundled at build time.
-- **Node.js** — `server/node-server.mjs` performs the identical check, reading Markdown from the content directory on disk.
+- **Cloudflare** — `workers/app.ts` checks the request before invoking React Router, using normalized Markdown bundled at build time.
+- **Node.js** — `server/node-server.mjs` performs the identical check, reading the same normalized Markdown build artifact.
 
 Both share the same negotiation rules, so behavior is identical across runtimes.

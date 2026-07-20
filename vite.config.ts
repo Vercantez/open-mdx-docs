@@ -20,7 +20,10 @@ export default defineConfig({
 			viteEnvironment: { name: 'ssr' },
 		}),
 		tailwindcss(),
-		mdxDocsPlugin({ contentDir: process.env.DOCS_DIR ?? 'docs' }),
+		mdxDocsPlugin({
+			contentDir: process.env.DOCS_DIR ?? 'docs',
+			basePath: process.env.BASE_PATH,
+		}),
 		reactRouter(),
 		tsconfigPaths(),
 	],

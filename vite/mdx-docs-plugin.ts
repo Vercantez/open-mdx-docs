@@ -5,7 +5,9 @@ import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import rehypeSlug from 'rehype-slug';
 import rehypeShiki from '@shikijs/rehype';
 import remarkGfm from 'remark-gfm';
+import remarkMdx from 'remark-mdx';
 import remarkParse from 'remark-parse';
+import remarkStringify from 'remark-stringify';
 import GithubSlugger from 'github-slugger';
 import { toString } from 'mdast-util-to-string';
 import { unified } from 'unified';
@@ -21,6 +23,7 @@ const PAGE_QUERY = '?mdxdocs';
 
 export interface MdxDocsPluginOptions {
 	contentDir?: string;
+	basePath?: string;
 }
 
 interface ScannedPage {
@@ -32,6 +35,94 @@ interface TocEntry {
 	depth: number;
 	text: string;
 	id: string;
+}
+
+type MarkdownNode = {
+	type?: string;
+	depth?: number;
+	url?: string;
+	alt?: string;
+	name?: string | null;
+	value?: unknown;
+	attributes?: MarkdownNode[];
+	children?: MarkdownNode[];
+};
+
+function normalizeBasePath(value: string | undefined): string {
+	if (!value || value === '/') return '';
+	const path = value.startsWith('/') ? value : `/${value}`;
+	return path.endsWith('/') ? path.slice(0, -1) : path;
+}
+
+function rewriteDocsUrl(url: string, pageSlugs: Set<string>, basePath: string): string {
+	if (!basePath || !url.startsWith('/') || url.startsWith('//') || url.startsWith(basePath + '/')) {
+		return url;
+	}
+	const match = /^([^?#]*)(.*)$/.exec(url);
+	if (!match) return url;
+	const pathname = match[1];
+	const suffix = match[2];
+	const slug = pathname.replace(/^\/+|\/+$/g, '').replace(/\.mdx?$/, '') || 'index';
+	return pageSlugs.has(slug) ? `${basePath}${pathname || '/'}${suffix}` : url;
+}
+
+function attributeValue(node: MarkdownNode, name: string): string | undefined {
+	const attribute = node.attributes?.find((item) => item.type === 'mdxJsxAttribute' && item.name === name);
+	return typeof attribute?.value === 'string' ? attribute.value : undefined;
+}
+
+function transformMdxComponents(node: MarkdownNode, pageSlugs: Set<string>, basePath: string): MarkdownNode[] {
+	if (node.children) {
+		node.children = node.children.flatMap((child) => transformMdxComponents(child, pageSlugs, basePath));
+	}
+	if (typeof node.url === 'string') node.url = rewriteDocsUrl(node.url, pageSlugs, basePath);
+	if (node.type !== 'mdxJsxFlowElement' && node.type !== 'mdxJsxTextElement') return [node];
+
+	const title = attributeValue(node, 'title');
+	const href = attributeValue(node, 'href');
+	const children = node.children ?? [];
+	const titleNode: MarkdownNode = href
+		? { type: 'link', url: rewriteDocsUrl(href, pageSlugs, basePath), children: [{ type: 'text', value: title }] }
+		: { type: 'text', value: title };
+
+	if (node.name === 'Card' || node.name === 'Step' || node.name === 'Tab' || node.name === 'Accordion') {
+		return title ? [{ type: 'heading', depth: 3, children: [titleNode] } as MarkdownNode, ...children] : children;
+	}
+	if (node.name === 'Note' || node.name === 'Warning' || node.name === 'Tip' || node.name === 'Info') {
+		const label = node.name === 'Note' ? undefined : node.name;
+		const prefix: MarkdownNode[] = label
+			? [{ type: 'paragraph', children: [{ type: 'strong', children: [{ type: 'text', value: `${label}:` }] }] }]
+			: [];
+		return [{ type: 'blockquote', children: [...prefix, ...children] }];
+	}
+	if (node.name === 'img' || node.name === 'Image') {
+		const src = attributeValue(node, 'src');
+		if (src) return [{ type: 'image', url: rewriteDocsUrl(src, pageSlugs, basePath), alt: attributeValue(node, 'alt') ?? '' }];
+	}
+	if (node.name === 'a') {
+		const url = attributeValue(node, 'href');
+		if (url) return [{ type: 'link', url: rewriteDocsUrl(url, pageSlugs, basePath), children }];
+	}
+	// Layout and unsupported presentation components have no Markdown equivalent.
+	return children;
+}
+
+function splitFrontmatter(source: string): { frontmatter: string; body: string } {
+	const match = /^(---\r?\n[\s\S]*?\r?\n---\r?\n?)/.exec(source);
+	return match ? { frontmatter: match[1], body: source.slice(match[1].length) } : { frontmatter: '', body: source };
+}
+
+function normalizeMarkdown(source: string, pageSlugs: Set<string>, basePath: string): string {
+	const { frontmatter, body } = splitFrontmatter(source);
+	const processor = unified()
+		.use(remarkParse)
+		.use(remarkMdx)
+		.use(remarkGfm)
+		.use(() => (tree: MarkdownNode) => {
+			transformMdxComponents(tree, pageSlugs, basePath);
+		})
+		.use(remarkStringify);
+	return `${frontmatter}${String(processor.processSync(body))}`;
 }
 
 function walk(dir: string): string[] {
@@ -93,6 +184,7 @@ const MIME_TYPES: Record<string, string> = {
 
 export function mdxDocsPlugin(options: MdxDocsPluginOptions = {}): Plugin {
 	const contentDir = path.resolve(options.contentDir ?? 'docs');
+	const basePath = normalizeBasePath(options.basePath);
 
 	let docsConfig: Record<string, unknown> = {};
 	let pages: ScannedPage[] = [];
@@ -257,11 +349,19 @@ export function mdxDocsPlugin(options: MdxDocsPluginOptions = {}): Plugin {
 	}
 
 	function rawModule(): string {
+		const pageSlugs = new Set(pages.map((page) => page.slug));
 		const imports = pages
-			.map((page, i) => `import raw_${i} from ${JSON.stringify(page.file + '?raw')};`)
+			.map((page, i) => {
+				const source = fs.readFileSync(page.file, 'utf8');
+				return `const raw_${i} = ${JSON.stringify(normalizeMarkdown(source, pageSlugs, basePath))};`;
+			})
 			.join('\n');
 		const entries = pages.map((page, i) => `  ${JSON.stringify(page.slug)}: raw_${i}`).join(',\n');
 		return `${imports}\n\nexport const rawMarkdown = {\n${entries}\n};\nexport function getRawMarkdown(slug) { return rawMarkdown[slug]; }\n`;
+	}
+
+	function markdownAssetName(slug: string): string {
+		return `.mdx-docs/markdown/${slug}.md`;
 	}
 
 	function invalidateAll(server: ViteDevServer) {
@@ -348,6 +448,14 @@ export function mdxDocsPlugin(options: MdxDocsPluginOptions = {}): Plugin {
 
 		generateBundle() {
 			if (this.environment?.name !== 'client') return;
+			const pageSlugs = new Set(pages.map((page) => page.slug));
+			for (const page of pages) {
+				this.emitFile({
+					type: 'asset',
+					fileName: markdownAssetName(page.slug),
+					source: normalizeMarkdown(fs.readFileSync(page.file, 'utf8'), pageSlugs, basePath),
+				});
+			}
 			for (const file of staticAssets) {
 				const rel = path.relative(contentDir, file).replace(/\\/g, '/');
 				this.emitFile({

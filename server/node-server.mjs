@@ -13,6 +13,18 @@ const clientDir = path.join(outDir, 'client');
 const docsDir = process.env.DOCS_DIR
 	? path.resolve(process.env.DOCS_DIR)
 	: path.join(rootDir, 'docs');
+const basePath = (() => {
+	const value = process.env.BASE_PATH?.trim();
+	if (!value || value === '/') return '';
+	const prefixed = value.startsWith('/') ? value : `/${value}`;
+	return prefixed.endsWith('/') ? prefixed.slice(0, -1) : prefixed;
+})();
+const normalizedMarkdownDir = path.join(
+	clientDir,
+	...(basePath ? [basePath.slice(1)] : []),
+	'.mdx-docs',
+	'markdown',
+);
 const port = Number(process.env.PORT ?? 3000);
 
 const MIME_TYPES = {
@@ -123,11 +135,12 @@ async function markdownNegotiation(req, res, pathname) {
 	if (!slug) return false;
 	const file = slugToFile.get(slug);
 	if (!file) return false;
-	const raw = await readFile(file, 'utf8');
+	const normalized = path.join(normalizedMarkdownDir, `${slug}.md`);
+	const raw = await readFile(existsSync(normalized) ? normalized : file, 'utf8');
 	res.writeHead(200, {
 		'content-type': 'text/markdown; charset=utf-8',
 		vary: 'Accept',
-		'cache-control': 'public, max-age=300',
+		'cache-control': 'public, max-age=300, stale-while-revalidate=60',
 	});
 	res.end(req.method === 'HEAD' ? undefined : raw);
 	return true;
@@ -214,7 +227,10 @@ const emptyCtx = {
 const server = createServer(async (req, res) => {
 	try {
 		const pathname = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`).pathname;
-		if (await markdownNegotiation(req, res, pathname)) return;
+		const appPath = basePath && (pathname === basePath || pathname.startsWith(`${basePath}/`))
+			? pathname.slice(basePath.length) || '/'
+			: pathname;
+		if (await markdownNegotiation(req, res, appPath)) return;
 		if ((req.method === 'GET' || req.method === 'HEAD') && serveStatic(res, pathname, req.method)) {
 			return;
 		}

@@ -51,7 +51,7 @@ export function markdownResponse(raw: string): Response {
 		headers: {
 			'content-type': 'text/markdown; charset=utf-8',
 			vary: 'Accept',
-			'cache-control': 'public, max-age=300',
+			'cache-control': 'public, max-age=300, stale-while-revalidate=60',
 		},
 	});
 }

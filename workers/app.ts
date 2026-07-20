@@ -40,7 +40,8 @@ function withHtmlGuards(request: Request, response: Response): Response {
 	if (!contentType.includes('text/html')) return response;
 	const headers = new Headers(response.headers);
 	headers.set('Content-Security-Policy', htmlCsp(request.url));
-	headers.set('Cache-Control', headers.get('Cache-Control') ?? 'public, max-age=0, must-revalidate');
+	headers.set('Cache-Control', headers.get('Cache-Control') ?? 'public, max-age=300, stale-while-revalidate=60');
+	headers.set('Vary', 'Accept');
 	return new Response(response.body, {
 		status: response.status,
 		statusText: response.statusText,

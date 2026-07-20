@@ -134,8 +134,9 @@ function writeDeployWrangler(config, ctx) {
 	const wrangler = {
 		name: workerName,
 		main: 'server/index.js',
-		compatibility_date: '2026-07-01',
+		compatibility_date: '2026-07-20',
 		compatibility_flags: ['nodejs_compat'],
+		cache: { enabled: true },
 		no_bundle: true,
 		workers_dev: true,
 		preview_urls: true,
