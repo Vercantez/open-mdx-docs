@@ -113,17 +113,69 @@ export function mdxDocsPlugin(options: MdxDocsPluginOptions = {}): Plugin {
 		docsConfig = {};
 	}
 
+	function collectNavSlugs(node: unknown, out: Set<string>) {
+		if (typeof node === 'string') {
+			out.add(node);
+			return;
+		}
+		if (Array.isArray(node)) {
+			for (const item of node) collectNavSlugs(item, out);
+			return;
+		}
+		if (node && typeof node === 'object') {
+			const record = node as Record<string, unknown>;
+			for (const key of ['pages', 'groups', 'tabs', 'anchors', 'dropdowns', 'languages', 'versions']) {
+				if (key in record) collectNavSlugs(record[key], out);
+			}
+		}
+	}
+
+	function resolvePageFile(slug: string): string | null {
+		for (const ext of ['.mdx', '.md']) {
+			const direct = path.join(contentDir, slug + ext);
+			if (fs.existsSync(direct)) return direct;
+			const index = path.join(contentDir, slug, `index${ext}`);
+			if (fs.existsSync(index)) return index;
+		}
+		return null;
+	}
+
 	function scan() {
 		const files = walk(contentDir);
-		pages = files
+		const allPages = files
 			.filter((file) => PAGE_EXTENSIONS.has(path.extname(file)))
 			.map((file) => ({ slug: slugForFile(contentDir, file), file }));
-		staticAssets = files.filter(
-			(file) =>
-				!PAGE_EXTENSIONS.has(path.extname(file)) &&
-				path.basename(file) !== 'docs.json' &&
-				path.basename(file) !== 'mint.json',
-		);
+
+		// Prefer navigation-listed pages so internal notes/plans in the content
+		// repo are not compiled (Mintlify only ships nav pages in practice).
+		const navSlugs = new Set<string>();
+		const navigation = (docsConfig as { navigation?: unknown }).navigation;
+		if (navigation) collectNavSlugs(navigation, navSlugs);
+
+		const includeAll = process.env.OPEN_MDX_DOCS_ALL_PAGES === '1';
+		if (!includeAll && navSlugs.size > 0) {
+			pages = [];
+			for (const slug of [...navSlugs].sort()) {
+				const file = resolvePageFile(slug);
+				if (file) pages.push({ slug, file });
+				else console.warn(`[open-mdx-docs] nav page missing: ${slug}`);
+			}
+		} else {
+			pages = allPages;
+		}
+
+		// Static assets: logos, images, css — never page sources / config.
+		const skipNames = new Set(['docs.json', 'mint.json', 'package.json', 'package-lock.json', 'bun.lock']);
+		staticAssets = files.filter((file) => {
+			const ext = path.extname(file);
+			const base = path.basename(file);
+			if (PAGE_EXTENSIONS.has(ext)) return false;
+			if (skipNames.has(base)) return false;
+			// skip common non-asset trees
+			const rel = path.relative(contentDir, file).replace(/\\/g, '/');
+			if (rel.startsWith('node_modules/') || rel.startsWith('.git/')) return false;
+			return true;
+		});
 	}
 
 	async function compilePage(file: string): Promise<string> {
