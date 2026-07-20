@@ -6,19 +6,29 @@ import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '~/components/
 import { SearchDialog } from '~/components/docs/search-dialog';
 import { SidebarNav } from '~/components/docs/sidebar';
 import { ThemeToggle } from '~/components/docs/theme-toggle';
+import { withBase } from '~/lib/base';
 import { docsConfig, navTabs } from '~/lib/docs';
+
+function assetUrl(path: string): string {
+	if (/^(https?:)?\/\//.test(path) || path.startsWith('data:')) return path;
+	return withBase(path.startsWith('/') ? path : `/${path}`);
+}
 
 function Logo() {
 	const logo = docsConfig.logo;
 	const name = docsConfig.name ?? 'Docs';
 	if (typeof logo === 'string') {
-		return <img src={logo} alt={name} className="h-6" />;
+		return <img src={assetUrl(logo)} alt={name} className="h-6" />;
 	}
 	if (logo && (logo.light || logo.dark)) {
 		return (
 			<>
-				{logo.light ? <img src={logo.light} alt={name} className="h-6 dark:hidden" /> : null}
-				{logo.dark ? <img src={logo.dark} alt={name} className="hidden h-6 dark:block" /> : null}
+				{logo.light ? (
+					<img src={assetUrl(logo.light)} alt={name} className="h-6 dark:hidden" />
+				) : null}
+				{logo.dark ? (
+					<img src={assetUrl(logo.dark)} alt={name} className="hidden h-6 dark:block" />
+				) : null}
 			</>
 		);
 	}

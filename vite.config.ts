@@ -5,7 +5,15 @@ import { defineConfig } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { mdxDocsPlugin } from './vite/mdx-docs-plugin';
 
+function viteBase(): string {
+	const raw = process.env.BASE_PATH?.trim();
+	if (!raw || raw === '/') return '/';
+	const withSlash = raw.startsWith('/') ? raw : `/${raw}`;
+	return withSlash.endsWith('/') ? withSlash : `${withSlash}/`;
+}
+
 export default defineConfig({
+	base: viteBase(),
 	plugins: [
 		cloudflare({
 			configPath: './wrangler.jsonc',

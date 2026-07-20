@@ -1,11 +1,11 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "camelai-docs",
-	"main": "workers/app.ts",
+	"name": "open-mdx-docs-camel",
+	"main": "build/server/index.js",
 	"compatibility_date": "2026-07-01",
 	"compatibility_flags": ["nodejs_compat"],
+	"no_bundle": true,
 	"workers_dev": true,
-	"preview_urls": true,
 	"assets": {
 		"binding": "ASSETS",
 		"directory": "build/client"
@@ -15,19 +15,5 @@
 	},
 	"vars": {
 		"AI_SEARCH_INSTANCE": "camelai-docs"
-	},
-	"env": {
-		"production": {
-			"name": "camelai-docs",
-			"vars": {
-				"AI_SEARCH_INSTANCE": "camelai-docs"
-			},
-			"routes": [
-				{
-					"pattern": "camelai.com/docs*",
-					"zone_name": "camelai.com"
-				}
-			]
-		}
 	}
 }

@@ -11,6 +11,7 @@ import {
 	CommandItem,
 	CommandList,
 } from '~/components/ui/command';
+import { withBase } from '~/lib/base';
 import type { SearchResult } from '~/lib/docs-types';
 
 interface SearchResponse {
@@ -48,7 +49,7 @@ export function SearchDialog() {
 		const controller = new AbortController();
 		const timeout = setTimeout(async () => {
 			try {
-				const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`, {
+				const res = await fetch(`${withBase('/api/search')}?q=${encodeURIComponent(query)}`, {
 					signal: controller.signal,
 				});
 				if (res.ok) setResponse((await res.json()) as SearchResponse);

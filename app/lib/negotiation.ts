@@ -60,10 +60,12 @@ export function negotiateMarkdown(
 	request: Request,
 	getRaw: (slug: string) => string | undefined,
 	defaultSlug: string,
+	/** Pathname with any mount prefix already stripped (e.g. "/quickstart"). */
+	pathname?: string,
 ): Response | null {
 	if (request.method !== 'GET' && request.method !== 'HEAD') return null;
 	const url = new URL(request.url);
-	const candidate = slugFromPathname(url.pathname);
+	const candidate = slugFromPathname(pathname ?? url.pathname);
 
 	let slug: string | null = null;
 	if (candidate?.explicit) {

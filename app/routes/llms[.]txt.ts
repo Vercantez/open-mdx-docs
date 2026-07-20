@@ -1,3 +1,4 @@
+import { withBase } from '~/lib/base';
 import { allPages, docsConfig, flattenedPageSlugs, pageTitle } from '~/lib/docs';
 
 export function loader() {
@@ -14,7 +15,9 @@ export function loader() {
 	for (const slug of flattenedPageSlugs()) {
 		const page = allPages[slug];
 		const desc = page?.frontmatter.description;
-		lines.push(`- [${pageTitle(slug)}](/${slug}.md)${desc ? `: ${desc}` : ''}`);
+		lines.push(
+			`- [${pageTitle(slug)}](${withBase(`/${slug}.md`)})${desc ? `: ${desc}` : ''}`,
+		);
 	}
 	return new Response(lines.join('\n') + '\n', {
 		headers: { 'content-type': 'text/plain; charset=utf-8' },

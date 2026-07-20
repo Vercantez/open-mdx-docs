@@ -9,15 +9,21 @@ import {
 } from 'react-router';
 import { ThemeProvider } from 'next-themes';
 import type { Route } from './+types/root';
+import { withBase } from '~/lib/base';
 import { docsConfig, primaryColors } from '~/lib/docs';
 import './app.css';
 
 export function loader() {
 	const colors = primaryColors();
+	const faviconRaw = docsConfig.favicon ?? '/favicon.svg';
+	const favicon =
+		/^(https?:)?\/\//.test(faviconRaw) || faviconRaw.startsWith('data:')
+			? faviconRaw
+			: withBase(faviconRaw.startsWith('/') ? faviconRaw : `/${faviconRaw}`);
 	return {
 		name: docsConfig.name ?? 'Docs',
 		description: docsConfig.description ?? '',
-		favicon: docsConfig.favicon ?? '/favicon.svg',
+		favicon,
 		appearance: {
 			default: docsConfig.appearance?.default ?? 'system',
 			strict: docsConfig.appearance?.strict ?? false,
