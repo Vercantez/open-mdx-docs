@@ -8,7 +8,7 @@
 		"build": "react-router build",
 		"preview": "wrangler dev",
 		"deploy": "react-router build && wrangler deploy",
-		"deploy:camel": "BASE_PATH=/docs DOCS_DIR=${DOCS_DIR:-../docs} react-router build && wrangler deploy --env production",
+		"deploy:camel": "BASE_PATH=/docs DOCS_DIR=${DOCS_DIR:-../docs} react-router build && node scripts/nest-base-assets.mjs && wrangler deploy -c wrangler.camelai.jsonc --keep-vars",
 		"start": "bun server/node-server.mjs",
 		"typecheck": "react-router typegen && tsc",
 		"cf-typegen": "wrangler types"
