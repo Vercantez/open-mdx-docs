@@ -17,6 +17,37 @@ declare module 'react-router' {
 
 const handleRequest = createRequestHandler(build, import.meta.env.MODE);
 
+function htmlCsp(requestUrl: string): string {
+	const origin = new URL(requestUrl).origin;
+	// Do NOT use script-src 'self' — camelai.com hosts a first-party GTM
+	// gateway at /gtm* that would still match and break React hydration.
+	const scriptRoots = [`${origin}/docs/`, `${origin}/docs/assets/`];
+	return [
+		"default-src 'self'",
+		`script-src 'unsafe-inline' 'unsafe-eval' ${scriptRoots.join(' ')}`,
+		"style-src 'self' 'unsafe-inline'",
+		"img-src 'self' data: blob: https:",
+		"font-src 'self' data:",
+		"connect-src 'self'",
+		"frame-src 'self' https:",
+		"frame-ancestors 'self'",
+		"base-uri 'self'",
+	].join('; ');
+}
+
+function withHtmlGuards(request: Request, response: Response): Response {
+	const contentType = response.headers.get('content-type') ?? '';
+	if (!contentType.includes('text/html')) return response;
+	const headers = new Headers(response.headers);
+	headers.set('Content-Security-Policy', htmlCsp(request.url));
+	headers.set('Cache-Control', headers.get('Cache-Control') ?? 'public, max-age=0, must-revalidate');
+	return new Response(response.body, {
+		status: response.status,
+		statusText: response.statusText,
+		headers,
+	});
+}
+
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		const url = new URL(request.url);
@@ -28,6 +59,7 @@ export default {
 			appPath,
 		);
 		if (negotiated) return negotiated;
-		return handleRequest(request, { cloudflare: { env, ctx } });
+		const response = await handleRequest(request, { cloudflare: { env, ctx } });
+		return withHtmlGuards(request, response);
 	},
 };
