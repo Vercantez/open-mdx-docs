@@ -1,13 +1,16 @@
-import { Menu } from 'lucide-react';
+import { ArrowRight, Menu } from 'lucide-react';
 import * as React from 'react';
 import { Link, Outlet, useLocation } from 'react-router';
 import { ClientOnly } from '~/components/client-only';
 import { SearchDialog } from '~/components/docs/search-dialog';
 import { SidebarNav } from '~/components/docs/sidebar';
+import { TabBar } from '~/components/docs/tab-bar';
 import { ThemeToggle } from '~/components/docs/theme-toggle';
 import { Button } from '~/components/ui/button';
-import { withBase } from '~/lib/base';
-import { docsConfig, navTabs } from '~/lib/docs';
+import { stripBase, withBase } from '~/lib/base';
+import { activeTab as resolveActiveTab, docsConfig, flattenNodes, navTabs } from '~/lib/docs';
+import type { NavTab } from '~/lib/docs-types';
+import { cn } from '~/lib/utils';
 
 function assetUrl(path: string): string {
 	if (/^(https?:)?\/\//.test(path) || path.startsWith('data:')) return path;
@@ -23,9 +26,7 @@ function Logo() {
 	if (logo && (logo.light || logo.dark)) {
 		return (
 			<>
-				{logo.light ? (
-					<img src={assetUrl(logo.light)} alt={name} className="h-6 dark:hidden" />
-				) : null}
+				{logo.light ? <img src={assetUrl(logo.light)} alt={name} className="h-6 dark:hidden" /> : null}
 				{logo.dark ? (
 					<img src={assetUrl(logo.dark)} alt={name} className="hidden h-6 dark:block" />
 				) : null}
@@ -37,19 +38,18 @@ function Logo() {
 
 function MobileNav({
 	tabs,
+	currentTab,
 	activeSlug,
 	multiTab,
 }: {
-	tabs: ReturnType<typeof navTabs>;
+	tabs: NavTab[];
+	currentTab: NavTab;
 	activeSlug: string;
 	multiTab: boolean;
 }) {
 	const [open, setOpen] = React.useState(false);
 	const location = useLocation();
-	React.useEffect(() => {
-		setOpen(false);
-	}, [location.pathname]);
-
+	React.useEffect(() => setOpen(false), [location.pathname]);
 	React.useEffect(() => {
 		if (!open) return;
 		const onKey = (event: KeyboardEvent) => {
@@ -92,16 +92,32 @@ function MobileNav({
 								Close
 							</Button>
 						</div>
-						{tabs.map((tab) => (
-							<div key={tab.tab} className="mb-6">
-								{multiTab ? (
-									<p className="mb-2 px-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-										{tab.tab}
-									</p>
-								) : null}
-								<SidebarNav nodes={tab.nodes} activeSlug={activeSlug} />
-							</div>
-						))}
+						{multiTab ? (
+							<>
+								<nav className="flex flex-col gap-1">
+									{tabs.map((tab) => {
+										const firstSlug = flattenNodes(tab.nodes)[0];
+										if (!firstSlug) return null;
+										return (
+											<Link
+												key={tab.tab}
+												to={`/${firstSlug}`}
+												className={cn(
+													'rounded-md px-2 py-1.5 text-sm font-medium transition-colors',
+													tab.tab === currentTab.tab
+														? 'text-primary'
+														: 'text-muted-foreground hover:text-foreground',
+												)}
+											>
+												{tab.tab}
+											</Link>
+										);
+									})}
+								</nav>
+								<div className="my-4 border-t" />
+							</>
+						) : null}
+						<SidebarNav nodes={currentTab.nodes} activeSlug={activeSlug} sticky={false} />
 					</aside>
 				</div>
 			) : null}
@@ -109,82 +125,108 @@ function MobileNav({
 	);
 }
 
+function openNavbarHref(href: string) {
+	if (href.startsWith('mailto:')) {
+		window.location.href = href;
+		return;
+	}
+	window.open(href, '_blank', 'noopener,noreferrer');
+}
+
 export default function DocsLayout() {
 	const location = useLocation();
-	const activeSlug = location.pathname.replace(/^\/+|\/+$/g, '');
+	const activeSlug = stripBase(location.pathname).replace(/^\/+|\/+$/g, '');
 	const tabs = navTabs();
+	const resolvedTab = resolveActiveTab(activeSlug);
+	const currentTab = tabs.find((tab) => tab.tab === resolvedTab.tab) ?? tabs[0];
 	const strict = docsConfig.appearance?.strict ?? false;
 	const links = docsConfig.navbar?.links ?? [];
+	const primary = docsConfig.navbar?.primary;
 	const multiTab = tabs.length > 1;
 
 	return (
 		<div className="flex min-h-svh flex-col">
-			<header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
-				<div className="mx-auto flex h-14 max-w-screen-2xl items-center gap-3 px-4 lg:px-6">
-					<ClientOnly
-						fallback={
-							<Button
-								variant="ghost"
-								size="icon"
-								className="lg:hidden"
-								aria-label="Open navigation"
-								disabled
-							>
-								<Menu />
-							</Button>
-						}
-					>
-						<MobileNav tabs={tabs} activeSlug={activeSlug} multiTab={multiTab} />
-					</ClientOnly>
-					<Link to="/" className="flex items-center gap-2">
-						<Logo />
-					</Link>
-					<div className="ml-auto flex items-center gap-1">
+			<header
+				className={cn(
+					'sticky top-0 z-40 bg-background/85 backdrop-blur',
+					!multiTab && 'border-b',
+				)}
+			>
+				<div className="mx-auto flex h-14 max-w-screen-2xl items-center px-4 lg:px-6">
+					<div className="flex items-center gap-3">
+						<ClientOnly
+							fallback={
+								<Button
+									variant="ghost"
+									size="icon"
+									className="lg:hidden"
+									aria-label="Open navigation"
+									disabled
+								>
+									<Menu />
+								</Button>
+							}
+						>
+							<MobileNav
+								tabs={tabs}
+								currentTab={currentTab}
+								activeSlug={activeSlug}
+								multiTab={multiTab}
+							/>
+						</ClientOnly>
+						<Link to="/" className="flex items-center gap-2">
+							<Logo />
+						</Link>
+					</div>
+					<div className="hidden flex-1 justify-center px-6 md:flex">
+						<SearchDialog variant="bar" />
+					</div>
+					<div className="ml-auto flex items-center gap-2">
 						{links.map((link) => (
 							<Button
 								key={link.href}
 								variant="ghost"
 								size="sm"
 								className="hidden md:inline-flex"
-								onClick={() => {
-									// Avoid raw mailto: in SSR HTML — Cloudflare Email Obfuscation
-									// rewrites it and breaks React hydration on the zone.
-									if (link.href.startsWith('mailto:')) {
-										window.location.href = link.href;
-										return;
-									}
-									window.open(link.href, '_blank', 'noopener,noreferrer');
-								}}
+								onClick={() => openNavbarHref(link.href)}
 							>
 								{link.label}
 							</Button>
 						))}
-						<SearchDialog />
+						{primary?.type === 'button' && primary.label && primary.href ? (
+							<Button
+								size="sm"
+								className="hidden rounded-full px-4 sm:inline-flex"
+								onClick={() => openNavbarHref(primary.href as string)}
+							>
+								{primary.label}
+								<ArrowRight className="size-3.5" />
+							</Button>
+						) : null}
+						<div className="md:hidden">
+							<SearchDialog variant="icon" />
+						</div>
 						<ClientOnly fallback={<span className="size-9" />}>
 							<ThemeToggle strict={strict} />
 						</ClientOnly>
 					</div>
 				</div>
+				{multiTab ? <TabBar tabs={tabs} activeTabName={currentTab.tab} /> : null}
 			</header>
 			<div className="mx-auto flex w-full max-w-screen-2xl flex-1 gap-8 px-4 lg:px-6">
-				<aside className="hidden w-60 shrink-0 py-8 lg:block">
-					{tabs.map((tab) => (
-						<div key={tab.tab} className="mb-6">
-							{multiTab ? (
-								<p className="mb-2 px-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-									{tab.tab}
-								</p>
-							) : null}
-							<SidebarNav nodes={tab.nodes} activeSlug={activeSlug} />
-						</div>
-					))}
+				<aside className="hidden w-60 shrink-0 lg:block">
+					<SidebarNav
+						nodes={currentTab.nodes}
+						activeSlug={activeSlug}
+						multiTab={multiTab}
+					/>
 				</aside>
 				<main className="min-w-0 flex-1 py-8">
 					<Outlet />
 				</main>
 			</div>
 			<footer className="border-t py-6">
-				<div className="mx-auto flex max-w-screen-2xl items-center justify-between px-4 text-sm text-muted-foreground lg:px-6">
+				<div className="mx-auto flex max-w-screen-2xl items-center justify-between px-4 text-[13px] text-muted-foreground lg:px-6">
 					<span>{docsConfig.name ?? 'Docs'}</span>
 					<span className="flex gap-4">
 						{Object.entries(docsConfig.footer?.socials ?? {}).map(([label, href]) => (

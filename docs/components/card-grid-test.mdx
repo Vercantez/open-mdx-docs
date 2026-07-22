@@ -1,0 +1,53 @@
+---
+title: Card grid test
+description: Responsive test cases for CardGroup orphan-fill behavior.
+---
+
+Use this page to verify that every final row fills the available width at each breakpoint.
+
+## Three cards in three columns
+
+<CardGroup cols={3}>
+  <Card title="One">First card.</Card>
+  <Card title="Two">Second card.</Card>
+  <Card title="Three">Third card.</Card>
+</CardGroup>
+
+## Four cards in three columns
+
+<CardGroup cols={3}>
+  <Card title="One">First card.</Card>
+  <Card title="Two">Second card.</Card>
+  <Card title="Three">Third card.</Card>
+  <Card title="Four">Full-width orphan.</Card>
+</CardGroup>
+
+## Five cards in three columns
+
+<CardGroup cols={3}>
+  <Card title="One">First card.</Card>
+  <Card title="Two">Second card.</Card>
+  <Card title="Three">Third card.</Card>
+  <Card title="Four">First half-width orphan.</Card>
+  <Card title="Five">Second half-width orphan.</Card>
+</CardGroup>
+
+## Seven cards in three columns
+
+<CardGroup cols={3}>
+  <Card title="One">First card.</Card>
+  <Card title="Two">Second card.</Card>
+  <Card title="Three">Third card.</Card>
+  <Card title="Four">Fourth card.</Card>
+  <Card title="Five">Fifth card.</Card>
+  <Card title="Six">Sixth card.</Card>
+  <Card title="Seven">Full-width orphan.</Card>
+</CardGroup>
+
+## Three cards in two columns
+
+<CardGroup cols={2}>
+  <Card title="One">First card.</Card>
+  <Card title="Two">Second card.</Card>
+  <Card title="Three">Full-width orphan.</Card>
+</CardGroup>

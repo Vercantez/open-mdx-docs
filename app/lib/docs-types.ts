@@ -41,6 +41,12 @@ export interface NavTab {
 	nodes: NavNode[];
 }
 
+export interface NavAnchor {
+	anchor: string;
+	href: string;
+	icon?: string;
+}
+
 export interface DocsConfig {
 	name?: string;
 	description?: string;
@@ -50,6 +56,11 @@ export interface DocsConfig {
 		primary?: string;
 		light?: string;
 		dark?: string;
+	};
+	fonts?: {
+		family?: string;
+		mono?: string;
+		source?: 'google' | 'none';
 	};
 	appearance?: {
 		default?: 'light' | 'dark' | 'system';
@@ -64,6 +75,9 @@ export interface DocsConfig {
 		}>;
 		groups?: Array<{ group: string; icon?: string; pages: NavEntryRaw[] }>;
 		pages?: NavEntryRaw[];
+		global?: {
+			anchors?: NavAnchor[];
+		};
 	};
 	navbar?: {
 		links?: Array<{ label: string; href: string }>;

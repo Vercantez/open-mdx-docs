@@ -41,5 +41,8 @@ export default defineConfig({
 	},
 	server: {
 		port: 3000,
+		fs: {
+			allow: [process.cwd(), process.env.DOCS_DIR ?? process.cwd()],
+		},
 	},
 });

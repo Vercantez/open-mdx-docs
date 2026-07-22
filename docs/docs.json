@@ -2,12 +2,6 @@
 	"$schema": "https://mintlify.com/docs.json",
 	"name": "Open MDX Docs",
 	"description": "A Mintlify-style documentation site you own. Deploy to Cloudflare or Node.js.",
-	"favicon": "/favicon.svg",
-	"colors": {
-		"primary": "#0d9373",
-		"light": "#07c983",
-		"dark": "#0d9373"
-	},
 	"appearance": {
 		"default": "system"
 	},
@@ -39,6 +33,7 @@
 						"pages": [
 							"components/callouts",
 							"components/cards",
+							"components/card-grid-test",
 							"components/tabs-and-steps",
 							"components/code-blocks"
 						]
@@ -54,7 +49,21 @@
 					}
 				]
 			}
-		]
+		],
+		"global": {
+			"anchors": [
+				{
+					"anchor": "GitHub",
+					"href": "https://github.com/Vercantez/open-mdx-docs",
+					"icon": "code"
+				},
+				{
+					"anchor": "shadcn/ui",
+					"href": "https://ui.shadcn.com",
+					"icon": "paintbrush"
+				}
+			]
+		}
 	},
 	"navbar": {
 		"links": [{ "label": "GitHub", "href": "https://github.com/anomalyco/opencode" }]

@@ -5,9 +5,10 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-	--docs-primary: #0d9373;
-	--docs-primary-light: #07c983;
-	--docs-primary-dark: #0d9373;
+	--docs-primary: oklch(0.21 0.006 285.885);
+	--docs-primary-light: oklch(0.92 0.004 286.32);
+	--docs-primary-dark: oklch(0.21 0.006 285.885);
+	--code-bg: oklch(0.975 0.003 286);
 	--background: oklch(1 0 0);
 	--foreground: oklch(0.141 0.005 285.823);
 	--card: oklch(1 0 0);
@@ -50,6 +51,7 @@
 	--border: oklch(1 0 0 / 10%);
 	--input: oklch(1 0 0 / 15%);
 	--ring: var(--docs-primary-light);
+	--code-bg: oklch(0.185 0.005 286);
 }
 
 @theme inline {
@@ -84,13 +86,14 @@
 
 html {
 	scroll-behavior: smooth;
-	scroll-padding-top: 5rem;
+	scroll-padding-top: var(--docs-scroll-padding, 5rem);
 }
 
 body {
 	background-color: var(--color-background);
 	color: var(--color-foreground);
-	font-family:
+	font-family: var(
+		--docs-font-sans,
 		ui-sans-serif,
 		system-ui,
 		-apple-system,
@@ -98,15 +101,30 @@ body {
 		Roboto,
 		'Helvetica Neue',
 		Arial,
-		sans-serif;
+		sans-serif
+	);
 	-webkit-font-smoothing: antialiased;
+}
+
+pre,
+code,
+kbd,
+samp {
+	font-family: var(
+		--docs-font-mono,
+		ui-monospace,
+		SFMono-Regular,
+		Menlo,
+		Consolas,
+		monospace
+	);
 }
 
 .prose-docs {
 	--tw-prose-body: var(--foreground);
 	--tw-prose-headings: var(--foreground);
 	--tw-prose-lead: var(--muted-foreground);
-	--tw-prose-links: var(--primary);
+	--tw-prose-links: var(--foreground);
 	--tw-prose-bold: var(--foreground);
 	--tw-prose-counters: var(--muted-foreground);
 	--tw-prose-bullets: var(--muted-foreground);
@@ -121,13 +139,92 @@ body {
 	--tw-prose-td-borders: var(--border);
 }
 
+
+.shiki span {
+	background-color: transparent !important;
+}
+
+.dark .shiki,
+.dark .shiki span {
+	color: var(--shiki-dark) !important;
+}
+
+pre.shiki {
+	margin: 0;
+	border: 0;
+	border-radius: 0;
+	background-color: var(--code-bg) !important;
+	padding: 0.875rem 1rem;
+	overflow-x: auto;
+	font-size: 0.8125rem;
+	line-height: 1.6;
+}
+
+code:not(pre code) {
+	background-color: var(--muted);
+	border: none;
+	border-radius: var(--radius-sm);
+	padding: 0.15em 0.35em;
+	font-size: 0.85em;
+	font-weight: 500;
+}
+
+code:not(pre code)::before,
+code:not(pre code)::after {
+	content: none;
+}
+
+.prose-docs :where(a):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+	color: var(--foreground);
+	font-weight: 500;
+	text-decoration: underline;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 3px;
+	text-decoration-color: color-mix(in oklab, var(--foreground) 35%, transparent);
+	transition:
+		color 0.15s ease,
+		text-decoration-color 0.15s ease;
+}
+
+.prose-docs :where(a):not(:where([class~='not-prose'], [class~='not-prose'] *)):hover {
+	color: var(--primary);
+	text-decoration-color: currentColor;
+}
+
 .heading-anchor {
 	opacity: 0;
 	margin-left: 0.375rem;
-	text-decoration: none;
+	position: relative;
 	color: var(--muted-foreground);
 	font-weight: 400;
+	text-decoration: none !important;
 	transition: opacity 0.15s ease;
+}
+
+.heading-anchor svg {
+	width: 0.8em;
+	height: 0.8em;
+	display: inline;
+	vertical-align: -0.08em;
+}
+
+.heading-anchor:hover {
+	color: var(--primary);
+}
+
+.heading-anchor[data-copied]::after {
+	content: 'Copied';
+	position: absolute;
+	left: calc(100% + 0.5rem);
+	top: 50%;
+	translate: 0 -50%;
+	padding: 2px 8px;
+	border-radius: 9999px;
+	background: var(--primary);
+	color: var(--primary-foreground);
+	font-size: 11px;
+	font-weight: 500;
+	white-space: nowrap;
 }
 
 h1:hover .heading-anchor,
@@ -140,51 +237,30 @@ h6:hover .heading-anchor,
 	opacity: 1;
 }
 
-.shiki,
-.shiki span {
-	color: var(--shiki-light);
-	background-color: var(--shiki-light-bg);
-}
-
-.dark .shiki,
-.dark .shiki span {
-	color: var(--shiki-dark);
-	background-color: var(--shiki-dark-bg);
-}
-
-pre.shiki {
-	border: 1px solid var(--border);
-	border-radius: var(--radius-lg);
-	padding: 0.875rem 1rem;
-	overflow-x: auto;
-	font-size: 0.8125rem;
-	line-height: 1.6;
-}
-
-code:not(pre code) {
-	background-color: var(--muted);
-	border: 1px solid var(--border);
-	border-radius: var(--radius-sm);
-	padding: 0.1rem 0.3rem;
-	font-size: 0.8125em;
-	font-weight: 500;
-}
-
-code:not(pre code)::before,
-code:not(pre code)::after {
-	content: none;
-}
-
-.prose-docs a {
-	text-decoration: none;
-	font-weight: 500;
-}
-
-.prose-docs a:hover {
-	text-decoration: underline;
+.prose-docs [data-update]:not([data-update] ~ [data-update]) {
+	border-top: 0;
+	padding-top: 0;
 }
 
 .docs-sidebar-scroll {
 	scrollbar-width: thin;
 	scrollbar-color: var(--border) transparent;
+}
+
+.docs-tab-bar-scroll {
+	scrollbar-width: none;
+}
+
+.docs-tab-bar-scroll::-webkit-scrollbar {
+	display: none;
+}
+
+::selection {
+	background-color: color-mix(in oklab, var(--primary) 22%, transparent);
+}
+
+:where(a, button, summary):focus-visible {
+	border-radius: var(--radius-sm);
+	outline: 2px solid var(--ring);
+	outline-offset: 2px;
 }

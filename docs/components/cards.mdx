@@ -36,3 +36,19 @@ Cards are the primary way to present a grid of related destinations.
 ```
 
 `cols` controls the preferred column count. On narrow screens the grid collapses automatically.
+
+The default is two columns. Values of four or more use the three-column layout. When the final row has fewer cards than requested, those cards stretch to fill the row instead of leaving an empty cell.
+
+## Horizontal cards
+
+Use `horizontal` for a standalone call to action or banner.
+
+<Card title="Open the quickstart" icon="rocket" href="/quickstart" horizontal>
+  Install the package and start the local docs server.
+</Card>
+
+```mdx
+<Card title="Open the quickstart" icon="rocket" href="/quickstart" horizontal>
+  Install the package and start the local docs server.
+</Card>
+```

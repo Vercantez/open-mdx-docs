@@ -3,7 +3,7 @@ title: Theming
 description: shadcn/ui design tokens, dark mode, and Mintlify color configuration.
 ---
 
-The site is themed with [shadcn/ui](https://ui.shadcn.com) design tokens on Tailwind CSS v4. Every color flows through CSS variables, so you can retheme the whole site without touching component code.
+The site is themed with [shadcn/ui](https://ui.shadcn.com) design tokens on Tailwind CSS v4. Every color flows through CSS variables, so you can retheme the whole site without touching component code. Theme values are compiled into the site stylesheet at build time.
 
 ## Brand color
 
@@ -12,20 +12,58 @@ Set `colors` in `docs.json` — the same shape Mintlify uses:
 ```json
 {
   "colors": {
-    "primary": "#0d9373",
-    "light": "#07c983",
-    "dark": "#0d9373"
+    "primary": "oklch(0.55 0.2 250)",
+    "light": "oklch(0.75 0.14 245)",
+    "dark": "oklch(0.48 0.18 250)"
   }
 }
 ```
 
 - `primary` is used for light mode accents (links, active nav, callouts).
 - `light` overrides the accent in dark mode; falls back to `primary`.
-- These values are injected as `--docs-primary` CSS variables at runtime.
+- These values compile to the `--docs-primary` CSS variables in the generated stylesheet.
+
+Without a `colors` block or `theme.css`, the site uses a neutral zinc accent.
+
+## Full shadcn theme
+
+Create `theme.css` next to `docs.json` to control any shadcn token. You can paste a theme from [shadcn/ui themes](https://ui.shadcn.com/themes), [tweakcn](https://tweakcn.com), or your application's stylesheet.
+
+```css
+:root {
+  --primary: oklch(0.55 0.2 250);
+  --primary-foreground: oklch(0.985 0 0);
+  --ring: oklch(0.55 0.2 250);
+  --radius: 0.625rem;
+}
+
+.dark {
+  --primary: oklch(0.75 0.14 245);
+  --primary-foreground: oklch(0.141 0.005 285.823);
+  --ring: oklch(0.75 0.14 245);
+}
+```
+
+The cascade order is framework zinc defaults, `docs.json` `colors`, then `theme.css`. Because `theme.css` loads last, it can override the `--primary` mapping as well as background, border, radius, and other tokens. Changes to `theme.css` reload during local development.
+
+## Fonts
+
+Set proportional and monospace families with `fonts`. Google Fonts are loaded by default when either family is present:
+
+```json
+{
+  "fonts": {
+    "family": "Inter",
+    "mono": "Geist Mono"
+  }
+}
+```
+
+Set `"source": "none"` when you load the fonts yourself. The families still populate the `--docs-font-sans` and `--docs-font-mono` CSS variables without adding Google Fonts links.
 
 ## Dark mode
 
-Dark mode is class-based and driven by `next-themes`. The toggle in the navbar switches between light, dark, and system.
+Dark mode is class-based and driven by `next-themes`. The first visit follows the configured default, which is `system` unless you change it. The navbar button switches between light and dark, then saves that explicit choice in the browser.
 
 Control behavior with `appearance` in `docs.json`:
 
@@ -40,7 +78,7 @@ Control behavior with `appearance` in `docs.json`:
 
 ## shadcn tokens
 
-All shadcn/ui tokens (`--background`, `--foreground`, `--card`, `--border`, `--primary`, ...) live in `app/app.css` under `:root` and `.dark`. Change them there, or add components with the shadcn CLI:
+The framework's default shadcn/ui tokens (`--background`, `--foreground`, `--card`, `--border`, `--primary`, ...) live in `app/app.css` under `:root` and `.dark`. Consumer sites override them in `theme.css`. Add framework components with the shadcn CLI:
 
 ```bash
 bunx shadcn@latest add tooltip

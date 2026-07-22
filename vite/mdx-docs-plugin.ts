@@ -8,7 +8,8 @@ import remarkGfm from 'remark-gfm';
 import remarkMdx from 'remark-mdx';
 import remarkParse from 'remark-parse';
 import remarkStringify from 'remark-stringify';
-import GithubSlugger from 'github-slugger';
+import GithubSlugger, { slug as slugify } from 'github-slugger';
+import type { ShikiTransformer } from 'shiki';
 import { toString } from 'mdast-util-to-string';
 import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
@@ -20,6 +21,15 @@ const PAGE_EXTENSIONS = new Set(['.mdx', '.md']);
 const VIRTUAL_PREFIX = 'virtual:mdx-docs/';
 const RESOLVED_PREFIX = '\0mdx-docs:';
 const PAGE_QUERY = '?mdxdocs';
+
+const codeMetaTransformer: ShikiTransformer = {
+	name: 'open-mdx-docs-code-meta',
+	pre(node) {
+		node.properties['data-language'] = this.options.lang;
+		const rawMeta = (this.options.meta as { __raw?: string } | undefined)?.__raw;
+		if (rawMeta) node.properties['data-meta'] = rawMeta;
+	},
+};
 
 export interface MdxDocsPluginOptions {
 	contentDir?: string;
@@ -146,15 +156,23 @@ function slugForFile(contentDir: string, file: string): string {
 }
 
 function extractToc(body: string): TocEntry[] {
-	const tree = unified().use(remarkParse).use(remarkGfm).parse(body);
+	const tree = unified().use(remarkParse).use(remarkMdx).use(remarkGfm).parse(body);
 	const slugger = new GithubSlugger();
 	const toc: TocEntry[] = [];
+	const updates: TocEntry[] = [];
 	visit(tree, 'heading', (node: { depth: number }) => {
 		const text = toString(node).trim();
 		if (!text) return;
 		toc.push({ depth: node.depth, text, id: slugger.slug(text) });
 	});
-	return toc;
+	visit(tree, 'mdxJsxFlowElement', (node) => {
+		const update = node as unknown as MarkdownNode;
+		if (update.name !== 'Update') return;
+		const label = attributeValue(update, 'label')?.trim();
+		if (!label) return;
+		updates.push({ depth: 2, text: label, id: slugify(label) });
+	});
+	return updates.length > 0 ? updates : toc;
 }
 
 function extractPlainText(body: string): string {
@@ -185,6 +203,7 @@ const MIME_TYPES: Record<string, string> = {
 export function mdxDocsPlugin(options: MdxDocsPluginOptions = {}): Plugin {
 	const contentDir = path.resolve(options.contentDir ?? 'docs');
 	const basePath = normalizeBasePath(options.basePath);
+	const themeCssFile = path.join(contentDir, 'theme.css');
 
 	let docsConfig: Record<string, unknown> = {};
 	let pages: ScannedPage[] = [];
@@ -203,6 +222,44 @@ export function mdxDocsPlugin(options: MdxDocsPluginOptions = {}): Plugin {
 			}
 		}
 		docsConfig = {};
+	}
+
+	function themeCssModule(): string {
+		const blocks: string[] = [];
+		const colors = docsConfig.colors as
+			| { primary?: unknown; light?: unknown; dark?: unknown }
+			| undefined;
+		if (typeof colors?.primary === 'string' && colors.primary.trim()) {
+			const primary = colors.primary.trim();
+			const light = typeof colors.light === 'string' && colors.light.trim() ? colors.light.trim() : primary;
+			const dark = typeof colors.dark === 'string' && colors.dark.trim() ? colors.dark.trim() : primary;
+			blocks.push(
+				`:root{--docs-primary:${primary};--docs-primary-light:${light};--docs-primary-dark:${dark}}`,
+			);
+		}
+
+		const fonts = docsConfig.fonts as
+			| { family?: unknown; mono?: unknown }
+			| undefined;
+		const fontProperties: string[] = [];
+		if (typeof fonts?.family === 'string' && fonts.family.trim()) {
+			fontProperties.push(
+				`--docs-font-sans:${JSON.stringify(fonts.family.trim())},ui-sans-serif,system-ui,sans-serif`,
+			);
+		}
+		if (typeof fonts?.mono === 'string' && fonts.mono.trim()) {
+			fontProperties.push(
+				`--docs-font-mono:${JSON.stringify(fonts.mono.trim())},ui-monospace,SFMono-Regular,Menlo,monospace`,
+			);
+		}
+		if (fontProperties.length > 0) blocks.push(`:root{${fontProperties.join(';')}}`);
+
+		const navigation = docsConfig.navigation as { tabs?: unknown } | undefined;
+		const multiTab = Array.isArray(navigation?.tabs) && navigation.tabs.length > 1;
+		blocks.push(`:root{--docs-scroll-padding:${multiTab ? '7.5rem' : '5rem'}}`);
+
+		if (fs.existsSync(themeCssFile)) blocks.push(fs.readFileSync(themeCssFile, 'utf8'));
+		return `${blocks.join('\n')}\n`;
 	}
 
 	function collectNavSlugs(node: unknown, out: Set<string>) {
@@ -257,7 +314,14 @@ export function mdxDocsPlugin(options: MdxDocsPluginOptions = {}): Plugin {
 		}
 
 		// Static assets: logos, images, css — never page sources / config.
-		const skipNames = new Set(['docs.json', 'mint.json', 'package.json', 'package-lock.json', 'bun.lock']);
+		const skipNames = new Set([
+			'docs.json',
+			'mint.json',
+			'theme.css',
+			'package.json',
+			'package-lock.json',
+			'bun.lock',
+		]);
 		staticAssets = files.filter((file) => {
 			const ext = path.extname(file);
 			const base = path.basename(file);
@@ -294,9 +358,42 @@ export function mdxDocsPlugin(options: MdxDocsPluginOptions = {}): Plugin {
 							behavior: 'append',
 							properties: {
 								className: ['heading-anchor'],
-								ariaLabel: 'Link to this section',
+								'aria-label': 'Copy link to this section',
+								title: 'Copy link',
 							},
-							content: { type: 'text', value: '#' },
+							content: {
+								type: 'element',
+								tagName: 'svg',
+								properties: {
+									width: 16,
+									height: 16,
+									viewBox: '0 0 24 24',
+									fill: 'none',
+									stroke: 'currentColor',
+									strokeWidth: 2,
+									strokeLinecap: 'round',
+									strokeLinejoin: 'round',
+									'aria-hidden': 'true',
+								},
+								children: [
+									{
+										type: 'element',
+										tagName: 'path',
+										properties: {
+											d: 'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71',
+										},
+										children: [],
+									},
+									{
+										type: 'element',
+										tagName: 'path',
+										properties: {
+											d: 'M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71',
+										},
+										children: [],
+									},
+								],
+							},
 						},
 					],
 					[
@@ -306,6 +403,7 @@ export function mdxDocsPlugin(options: MdxDocsPluginOptions = {}): Plugin {
 								light: 'github-light-default',
 								dark: 'github-dark-default',
 							},
+							transformers: [codeMetaTransformer],
 						},
 					],
 				],
@@ -388,7 +486,12 @@ export function mdxDocsPlugin(options: MdxDocsPluginOptions = {}): Plugin {
 			scan();
 		},
 
+		buildStart() {
+			this.addWatchFile(themeCssFile);
+		},
+
 		resolveId(id) {
+			if (id === 'virtual:mdx-docs/theme.css') return `${RESOLVED_PREFIX}theme.css`;
 			if (id.startsWith(VIRTUAL_PREFIX)) return RESOLVED_PREFIX + id;
 			if (id.endsWith(PAGE_QUERY) && path.isAbsolute(id.slice(0, -PAGE_QUERY.length))) {
 				return id;
@@ -404,6 +507,8 @@ export function mdxDocsPlugin(options: MdxDocsPluginOptions = {}): Plugin {
 			if (!id.startsWith(RESOLVED_PREFIX)) return null;
 			const name = id.slice(RESOLVED_PREFIX.length);
 			switch (name) {
+				case 'theme.css':
+					return themeCssModule();
 				case 'virtual:mdx-docs/config':
 					return `export default ${JSON.stringify(docsConfig)};`;
 				case 'virtual:mdx-docs/pages':
@@ -419,6 +524,7 @@ export function mdxDocsPlugin(options: MdxDocsPluginOptions = {}): Plugin {
 
 		configureServer(server) {
 			server.watcher.add(contentDir);
+			server.watcher.add(themeCssFile);
 			server.watcher.on('add', (file) => {
 				if (file.startsWith(contentDir)) invalidateAll(server);
 			});
@@ -428,15 +534,19 @@ export function mdxDocsPlugin(options: MdxDocsPluginOptions = {}): Plugin {
 			server.watcher.on('change', (file) => {
 				if (
 					file === path.join(contentDir, 'docs.json') ||
-					file === path.join(contentDir, 'mint.json')
+					file === path.join(contentDir, 'mint.json') ||
+					file === themeCssFile
 				) {
 					invalidateAll(server);
 				}
 			});
 
 			server.middlewares.use((req, res, next) => {
-				const url = (req.url ?? '').split('?')[0];
+				let url = (req.url ?? '').split('?')[0];
 				if (!url || req.method !== 'GET') return next();
+				if (basePath && (url === basePath || url.startsWith(`${basePath}/`))) {
+					url = url.slice(basePath.length) || '/';
+				}
 				const rel = decodeURIComponent(url).replace(/^\/+/, '');
 				if (!rel) return next();
 				const file = path.join(contentDir, rel);

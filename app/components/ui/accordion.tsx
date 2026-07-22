@@ -26,11 +26,11 @@ function AccordionTrigger({
 	...props
 }: React.ComponentProps<typeof AccordionPrimitive.Trigger>) {
 	return (
-		<AccordionPrimitive.Header className="flex">
+		<AccordionPrimitive.Header className="not-prose flex">
 			<AccordionPrimitive.Trigger
 				data-slot="accordion-trigger"
 				className={cn(
-					'flex flex-1 items-center justify-between gap-4 rounded-md py-4 text-left text-sm font-medium transition-all outline-none hover:underline focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-180',
+					'flex w-full flex-1 items-center justify-between gap-4 px-4 py-4 text-left text-[15px] font-medium transition-colors outline-none hover:bg-muted/50 hover:no-underline disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-180',
 					className,
 				)}
 				{...props}
@@ -53,7 +53,14 @@ function AccordionContent({
 			className="overflow-hidden text-sm data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
 			{...props}
 		>
-			<div className={cn('pt-0 pb-4', className)}>{children}</div>
+			<div
+				className={cn(
+					'px-4 pt-0.5 pb-4 text-sm leading-relaxed text-muted-foreground',
+					className,
+				)}
+			>
+				{children}
+			</div>
 		</AccordionPrimitive.Content>
 	);
 }

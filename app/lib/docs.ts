@@ -4,6 +4,7 @@ import type {
 	DocsConfig,
 	DocsPageModule,
 	NavEntryRaw,
+	NavAnchor,
 	NavGroup,
 	NavNode,
 	NavPage,
@@ -73,7 +74,7 @@ export function navTabs(): NavTab[] {
 		];
 	}
 	if (navigation.tabs?.length) {
-		return navigation.tabs
+		const tabs = navigation.tabs
 			.map((tab) => ({
 				tab: tab.tab,
 				icon: tab.icon,
@@ -85,6 +86,7 @@ export function navTabs(): NavTab[] {
 				],
 			}))
 			.filter((tab) => tab.nodes.length > 0);
+		if (tabs.length > 0) return tabs;
 	}
 	const nodes: NavNode[] = [
 		...(navigation.groups ?? []).map(resolveGroup).filter((g): g is NavGroup => g !== null),
@@ -95,17 +97,44 @@ export function navTabs(): NavTab[] {
 	return [{ tab: 'Docs', nodes }];
 }
 
-function flattenNodes(nodes: NavNode[], out: string[]) {
+export function flattenNodes(nodes: NavNode[], out: string[] = []): string[] {
 	for (const node of nodes) {
 		if (node.type === 'page') out.push(node.slug);
 		else flattenNodes(node.pages, out);
 	}
+	return out;
 }
 
 export function flattenedPageSlugs(): string[] {
 	const out: string[] = [];
 	for (const tab of navTabs()) flattenNodes(tab.nodes, out);
 	return out;
+}
+
+export function activeTab(slug: string): NavTab {
+	const tabs = navTabs();
+	return tabs.find((tab) => flattenNodes(tab.nodes).includes(slug)) ?? tabs[0];
+}
+
+function groupInNodes(nodes: NavNode[], slug: string, parentGroup?: string): string | undefined {
+	for (const node of nodes) {
+		if (node.type === 'page') {
+			if (node.slug === slug) return parentGroup;
+			continue;
+		}
+		const group = groupInNodes(node.pages, slug, node.group);
+		if (group) return group;
+	}
+	return undefined;
+}
+
+export function groupOf(slug: string): string | undefined {
+	const tab = activeTab(slug);
+	return tab ? groupInNodes(tab.nodes, slug) : undefined;
+}
+
+export function globalAnchors(): NavAnchor[] {
+	return docsConfig.navigation?.global?.anchors ?? [];
 }
 
 export function firstPageSlug(): string {
@@ -124,18 +153,5 @@ export function adjacentPages(slug: string): {
 	return {
 		prev: prev ? { slug: prev, title: pageTitle(prev) } : undefined,
 		next: next ? { slug: next, title: pageTitle(next) } : undefined,
-	};
-}
-
-export function primaryColor(): string {
-	return docsConfig.colors?.primary ?? '#0d9373';
-}
-
-export function primaryColors(): { primary: string; light: string; dark: string } {
-	const primary = primaryColor();
-	return {
-		primary,
-		light: docsConfig.colors?.light ?? primary,
-		dark: docsConfig.colors?.dark ?? primary,
 	};
 }

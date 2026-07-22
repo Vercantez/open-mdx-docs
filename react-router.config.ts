@@ -3,7 +3,7 @@ import type { Config } from '@react-router/dev/config';
 function normalizeBasename(value: string | undefined): string | undefined {
 	if (!value || value === '/') return undefined;
 	const withSlash = value.startsWith('/') ? value : `/${value}`;
-	return withSlash.endsWith('/') ? withSlash.slice(0, -1) : withSlash;
+	return withSlash.endsWith('/') ? withSlash : `${withSlash}/`;
 }
 
 const buildDirectory = process.env.OPEN_MDX_DOCS_OUT || 'build';

@@ -4,7 +4,7 @@
 
 - **Content**: `docs/` (or `DOCS_DIR`) — Mintlify-style `docs.json` / `mint.json` + `.mdx` / `.md` pages.
 - **Build**: `vite/mdx-docs-plugin.ts` compiles pages, extracts frontmatter/TOC, builds search index and raw Markdown map as virtual modules (`virtual:mdx-docs/*`).
-- **UI**: React Router 7 + shadcn/ui + Tailwind v4. Theme tokens in `app/app.css`; brand color from `docs.json` `colors`.
+- **UI**: React Router 7 + shadcn/ui + Tailwind v4. Framework defaults live in `app/app.css`; consumer theme tokens are compiled from `docs.json` and `theme.css` through `virtual:mdx-docs/theme.css`.
 - **Cloudflare entry**: `workers/app.ts` — content negotiation first, then React Router.
 - **Node entry**: `server/node-server.mjs` — same negotiation from disk, static assets, then RR handler.
 
@@ -25,8 +25,20 @@
 ## Theming
 
 - Keep Mintlify `colors` / `appearance` shape in `docs.json`.
+- `docs.json` `colors` is the compatibility shortcut for the accent trio. An optional `theme.css` next to `docs.json` loads last and can override any shadcn token.
+- Optional `fonts.family` / `fonts.mono` values populate CSS variables and load from Google Fonts unless `fonts.source` is `none`.
+- The framework fallback favicon is `public/open-mdx-docs-favicon.svg`; consumer asset names stay unreserved so configured content favicons win in dev and production.
 - shadcn components live under `app/components/ui/`. Prefer adding via shadcn CLI patterns.
 - Do not introduce named theme presets; one high-quality layout.
+
+## Navigation and components
+
+- Multi-tab sites render tabs in the horizontal header bar and only the active tab's groups in the flat sidebar.
+- Desktop sidebar and table-of-contents rails are viewport-fixed inside reserved layout columns; the mobile drawer passes `sticky={false}` to keep its navigation in flow.
+- `navigation.global.anchors` render above sidebar groups on desktop and mobile.
+- Mintlify-compatible components are registered in `app/lib/mdx-components.tsx`, including the changelog `Update` component.
+- `Card horizontal` renders a compact linked banner. `CardGroup` honors `cols` responsively and stretches orphaned cards so the final row has no empty cell.
+- On pages containing `Update`, the table of contents uses the unique `Update` labels and ignores headings inside each entry.
 
 ## After changes
 

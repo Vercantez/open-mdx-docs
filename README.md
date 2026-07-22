@@ -38,6 +38,42 @@ your-docs-repo/
   package.json
 ```
 
+Brand the site and add persistent sidebar destinations in `docs.json`:
+
+```json
+{
+  "colors": { "primary": "oklch(0.55 0.2 250)" },
+  "fonts": { "family": "Inter", "mono": "Geist Mono" },
+  "navigation": {
+    "global": {
+      "anchors": [
+        { "anchor": "Dashboard", "href": "https://example.com", "icon": "browser" }
+      ]
+    }
+  }
+}
+```
+
+Omit `colors` to keep the neutral zinc accent. Fonts load from Google Fonts unless `fonts.source` is set to `"none"`. For full shadcn control, place a `theme.css` file next to `docs.json`; its tokens override the framework defaults and the `colors` shortcut.
+
+### MDX components
+
+The renderer includes Mintlify-compatible cards, callouts, tabs, accordions, steps, code groups, fields, and frames. Changelog entries use `Update`:
+
+```mdx
+<Update label="July 21, 2026" description="Version 1.2">
+### Faster search
+
+Search results now include each page's navigation group.
+</Update>
+```
+
+Keep `Update` labels unique within a page. Changelog pages use those labels, rather than their inner headings, for the table of contents. Cards also support a compact banner layout with `<Card horizontal>`.
+
+Section headings include a link icon that copies the base-path-aware deep link while preserving normal hash navigation.
+
+`navigation.global.anchors` render above the current tab's sidebar groups on desktop and mobile.
+
 ### Config (`open-mdx-docs.config.json`)
 
 ```json

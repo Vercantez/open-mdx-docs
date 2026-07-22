@@ -24,13 +24,27 @@ curl -H "Accept: text/markdown" https://docs.example.com/quickstart
 ```json
 {
   "name": "Open MDX Docs",
-  "colors": { "primary": "#0d9373" }
+  "colors": { "primary": "oklch(0.55 0.2 250)" }
 }
 ```
 
 ## Code groups
 
 Group related snippets with `CodeGroup`. Children are fenced code blocks; the first word of each fence language line is used as the tab title.
+
+<CodeGroup>
+```ts server.ts
+export function greet(name: string) {
+  return `Hello, ${name}`;
+}
+```
+
+```ts client.ts
+import { greet } from './server';
+
+console.log(greet('world'));
+```
+</CodeGroup>
 
 ## Inline code
 
