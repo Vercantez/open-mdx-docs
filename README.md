@@ -96,6 +96,11 @@ Section headings include a link icon that copies the base-path-aware deep link w
 | `routes` | Wrangler routes for production |
 | `aiSearchInstance` | Cloudflare AI Search instance name |
 
+For a non-root `basePath`, the exact mount URL redirects permanently to its
+trailing-slash form. For example, `/docs` redirects to `/docs/` while
+preserving the query string. Markdown content negotiation still runs before
+the HTML redirect.
+
 ### Commands
 
 | Command | Description |

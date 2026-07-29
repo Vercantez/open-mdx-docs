@@ -14,6 +14,9 @@
 - Explicit `/{slug}.md` (and `.mdx`) always returns Markdown.
 - Responses must set `Content-Type: text/markdown; charset=utf-8` and `Vary: Accept`.
 - Negotiation runs in the server entry **before** React rendering on both Cloudflare and Node.
+- For a non-root base path, negotiate Markdown first, then redirect the bare
+  HTML mount path (for example `/docs`) to its trailing-slash form (`/docs/`).
+  Keep this behavior aligned in the Worker and Vite development server.
 
 ## Search (invariant)
 
