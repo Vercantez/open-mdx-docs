@@ -22,3 +22,15 @@ export function stripBase(pathname: string): string {
 	if (pathname.startsWith(`${base}/`)) return pathname.slice(base.length) || '/';
 	return pathname;
 }
+
+/** Redirect the bare mount path to its canonical trailing-slash URL. */
+export function redirectBareBasePath(
+	request: Request,
+	base = basePath(),
+): Response | null {
+	if (!base) return null;
+	const url = new URL(request.url);
+	if (url.pathname !== base) return null;
+	url.pathname = `${base}/`;
+	return Response.redirect(url, 308);
+}
