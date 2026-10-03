@@ -145,7 +145,8 @@ export function adjacentPages(slug: string): {
 	prev?: { slug: string; title: string };
 	next?: { slug: string; title: string };
 } {
-	const flat = flattenedPageSlugs();
+	// Within the page's own tab: a tab's first page has no Previous into another tab, nor its last a Next.
+	const flat = flattenNodes(activeTab(slug).nodes);
 	const index = flat.indexOf(slug);
 	if (index === -1) return {};
 	const prev = flat[index - 1];
